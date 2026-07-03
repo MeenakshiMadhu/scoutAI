@@ -10,7 +10,7 @@ function timeAgo(iso: string): string {
 
 export default function JobCard({ job }: { job: Job }) {
   return (
-    <div className="border rounded-xl p-5 hover:shadow-md transition-shadow bg-white flex flex-col">
+    <div className="border border-gray-200 rounded-xl p-5 hover:shadow-md transition-shadow bg-[var(--card)] text-[var(--card-foreground)] flex flex-col">
       <div className="flex justify-between items-start gap-2">
         <h3 className="font-semibold text-gray-900 leading-snug">
           {job.title}
