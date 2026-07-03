@@ -1,17 +1,30 @@
-### Thursday, July 2 2026
- - Going through ideas for tech stack, hosting, overall flow, etc.
- - FE: Next.js, Tailwind, deploy to Vercel
-   BE: Next.js API routes
-   Embeddings: OpenAI text-embedding-3-small, good for smaller databases for the demo
-   Vector store: in-memory? SQLite (for production level: pgvector/ANN index)
-   Resume parsing: Extract text from pdf and send to LLM -> {role_family, seniority, skills[], years}
-   Generate synthetic data using LLM
- - Figuring out how to deal with scaling and matching.
- - How synthetic data can be generated, embedded, and stored
- - Created the repo, named the project
- - figured out the 2 flows -> Data Ingestion flow, Main flow(runs per user request)
+# scoutAI — Build Notes
 
- - Generated synthetic data
+## Thursday, July 2 2026
 
-### Friday, July 3 2026
- - Built the empty Next.js app and set up deployment on Vercel to get the production pipeline running.
+**Planning**
+
+- Explored tech stack, hosting, and overall flow.
+- Decided on the stack:
+  - Frontend: Next.js + Tailwind, deployed to Vercel
+  - Backend: Next.js API routes
+  - Embeddings: OpenAI `text-embedding-3-small` (good for a small demo dataset)
+  - Vector store: in-memory / SQLite for the demo; pgvector or an ANN index for production
+  - Resume parsing: extract text from PDF, send to LLM -> `{ role_family, seniority, skills[], years }`
+  - Synthetic job data generated via LLM
+- Worked through the scaling and matching approach.
+- Worked out how synthetic data gets generated, embedded, and stored.
+- Identified the two flows:
+  - Data ingestion flow (offline, one-time)
+  - Main flow (runs per user request)
+
+**Done**
+
+- Created the repo and named the project.
+- Generated the synthetic dataset (1500 jobs).
+
+## Friday, July 3 2026
+
+- Built the empty Next.js app and set up Vercel deployment to get the production pipeline running.
+- Set up the frontend job list display.
+- Added filter, sort, search, and pagination.
