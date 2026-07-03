@@ -1,4 +1,4 @@
-Thu July 2 2026
+### Thursday, July 2 2026
  - Going through ideas for tech stack, hosting, overall flow, etc.
  - FE: Next.js, Tailwind, deploy to Vercel
    BE: Next.js API routes
@@ -10,3 +10,8 @@ Thu July 2 2026
  - How synthetic data can be generated, embedded, and stored
  - Created the repo, named the project
  - figured out the 2 flows -> Data Ingestion flow, Main flow(runs per user request)
+
+ - Generated synthetic data
+
+### Friday, July 3 2026
+ - Built the empty Next.js app and set up deployment on Vercel to get the production pipeline running.
