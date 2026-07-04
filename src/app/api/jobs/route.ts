@@ -9,12 +9,19 @@ export async function GET(req: NextRequest) {
   let results: Job[] = JOBS;
 
   // ---- structured filters ----
-  const family = p.get("family");
-  const locType = p.get("location_type");
-  const emp = p.get("employment_type");
-  if (family) results = results.filter((j) => j.role_family === family);
-  if (locType) results = results.filter((j) => j.location_type === locType);
-  if (emp) results = results.filter((j) => j.employment_type === emp);
+  const families = p.get("family")?.split(",").filter(Boolean) ?? [];
+  const locTypes = p.get("location_type")?.split(",").filter(Boolean) ?? [];
+  const emps = p.get("employment_type")?.split(",").filter(Boolean) ?? [];
+  const loc = p.get("loc")?.toLowerCase().trim();
+
+  if (families.length)
+    results = results.filter((j) => families.includes(j.role_family));
+  if (locTypes.length)
+    results = results.filter((j) => locTypes.includes(j.location_type));
+  if (emps.length)
+    results = results.filter((j) => emps.includes(j.employment_type));
+  if (loc)
+    results = results.filter((j) => j.location.toLowerCase().includes(loc));
 
   // ---- text search (multi-word, description included, title-priority) ----
   const q = p.get("q")?.toLowerCase().trim();
@@ -27,7 +34,6 @@ export async function GET(req: NextRequest) {
       const haystack = [
         j.title,
         j.company,
-        j.location,
         j.department,
         j.skills.join(" "),
         j.description,
