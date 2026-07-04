@@ -28,3 +28,6 @@
 - Built the empty Next.js app and set up Vercel deployment to get the production pipeline running.
 - Set up the frontend job list display.
 - Added filter, sort, search, and pagination.
+- added resume upload section
+- updated UI
+- fine-tuned the filter functionality to checkboxes (multiple filters), and search to consider JD (but weigh less than title & other filters)
