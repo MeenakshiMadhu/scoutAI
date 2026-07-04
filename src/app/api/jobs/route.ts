@@ -8,46 +8,74 @@ export async function GET(req: NextRequest) {
 
   let results: Job[] = JOBS;
 
-  // ---- filters ----
+  // ---- structured filters ----
   const family = p.get("family");
   const locType = p.get("location_type");
   const emp = p.get("employment_type");
-  const q = p.get("q")?.toLowerCase().trim();
-
   if (family) results = results.filter((j) => j.role_family === family);
   if (locType) results = results.filter((j) => j.location_type === locType);
   if (emp) results = results.filter((j) => j.employment_type === emp);
-  if (q)
-    results = results.filter(
-      (j) =>
-        j.title.toLowerCase().includes(q) ||
-        j.company.toLowerCase().includes(q) ||
-        j.location.toLowerCase().includes(q) ||
-        j.skills.some((s) => s.toLowerCase().includes(q))
-    );
+
+  // ---- text search (multi-word, description included, title-priority) ----
+  const q = p.get("q")?.toLowerCase().trim();
+  const words = q ? q.split(/\s+/).filter(Boolean) : [];
+
+  // attach a relevance score so we can rank; keep only rows that match every word
+  let scored = results
+    .map((j) => {
+      const title = j.title.toLowerCase();
+      const haystack = [
+        j.title,
+        j.company,
+        j.location,
+        j.department,
+        j.skills.join(" "),
+        j.description,
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      if (words.length === 0) return { job: j, relevance: 0 };
+
+      // every query word must appear somewhere (AND semantics)
+      const allMatch = words.every((w) => haystack.includes(w));
+      if (!allMatch) return null;
+
+      // relevance: reward matches in the title heavily, exact-phrase in title most
+      let relevance = 0;
+      if (title.includes(q!)) relevance += 100; // full phrase in title
+      relevance += words.filter((w) => title.includes(w)).length * 10; // each word in title
+      return { job: j, relevance };
+    })
+    .filter(Boolean) as { job: Job; relevance: number }[];
 
   // ---- sort ----
   const sort = p.get("sort") ?? "newest";
-  results = [...results].sort((a, b) => {
+  scored.sort((a, b) => {
+    // when there's a search query, title relevance wins first
+    if (words.length > 0 && b.relevance !== a.relevance)
+      return b.relevance - a.relevance;
+    const ja = a.job,
+      jb = b.job;
     switch (sort) {
       case "newest":
-        return b.date_posted.localeCompare(a.date_posted);
+        return jb.date_posted.localeCompare(ja.date_posted);
       case "oldest":
-        return a.date_posted.localeCompare(b.date_posted);
+        return ja.date_posted.localeCompare(jb.date_posted);
       case "pay_high":
-        return b.compensation_max - a.compensation_max;
+        return jb.compensation_max - ja.compensation_max;
       case "pay_low":
-        return a.compensation_min - b.compensation_min;
+        return ja.compensation_min - jb.compensation_min;
       case "title":
-        return a.title.localeCompare(b.title);
+        return ja.title.localeCompare(jb.title);
       default:
         return 0;
     }
   });
 
-  // ---- paginate ----
-  const total = results.length;
-  const paged = results.slice(page * size, page * size + size);
+  const finalResults = scored.map((s) => s.job);
+  const total = finalResults.length;
+  const paged = finalResults.slice(page * size, page * size + size);
 
   return NextResponse.json({
     total,

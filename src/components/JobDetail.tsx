@@ -36,9 +36,9 @@ export default function JobDetail({
           job.location_type,
           job.employment_type,
           job.seniority,
-        ].map((m) => (
+        ].map((m, i) => (
           <span
-            key={m}
+            key={i}
             className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-700"
           >
             {m}
