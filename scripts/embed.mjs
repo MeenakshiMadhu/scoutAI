@@ -1,11 +1,11 @@
 // scripts/embed.mjs — run locally ONCE, never on Vercel
 import fs from "fs";
-import OpenAI from "openai";
+import { pipeline } from "@xenova/transformers";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-const jobs = JSON.parse(fs.readFileSync("jobs.json", "utf8"));
+const jobs = JSON.parse(fs.readFileSync("src/data/jobs.json", "utf8"));
+const embed = await pipeline("feature-extraction", "Xenova/all-MiniLM-L6-v2");
 
-// Text we embed — keep IDENTICAL in shape to how we embed the resume later
+// IMPORTANT: this text shape must match how the resume is embedded (see upload route)
 function jobText(j) {
   return (
     `${j.title}. Field: ${j.role_family}. Seniority: ${j.seniority}. ` +
@@ -14,17 +14,15 @@ function jobText(j) {
 }
 
 const out = [];
-const BATCH = 100;
-for (let i = 0; i < jobs.length; i += BATCH) {
-  const slice = jobs.slice(i, i + BATCH);
-  const res = await openai.embeddings.create({
-    model: "text-embedding-3-small",
-    input: slice.map(jobText),
+for (let i = 0; i < jobs.length; i++) {
+  const res = await embed(jobText(jobs[i]), {
+    pooling: "mean",
+    normalize: true,
   });
-  slice.forEach((j, k) => out.push({ ...j, embedding: res.data[k].embedding }));
-  console.log(`embedded ${Math.min(i + BATCH, jobs.length)}/${jobs.length}`);
+  out.push({ ...jobs[i], embedding: Array.from(res.data) });
+  if (i % 100 === 0) console.log(`embedded ${i}/${jobs.length}`);
 }
 
 fs.mkdirSync("src/data", { recursive: true });
 fs.writeFileSync("src/data/jobs-embedded.json", JSON.stringify(out));
-console.log("done — wrote src/data/jobs-embedded.json");
+console.log(`done — ${out.length} jobs embedded`);
