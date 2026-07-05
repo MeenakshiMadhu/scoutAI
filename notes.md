@@ -31,3 +31,11 @@
 - added resume upload section
 - updated UI
 - fine-tuned the filter functionality to checkboxes (multiple filters), and search to consider JD (but weigh less than title & other filters)
+
+## Saturday, July 4 2026
+
+- Added embedding script and logic using Xenova/all-MiniLM-L6-v2 (local, via @xenova/transformers)
+- Ran embedding script on synthetic job data and stored as jobs-embedded.json
+- Added Resume pdf parsing logic using pdfreader, and resumeProfile.ts for building resume profile ready to embed
+- Added embedding logic for resume using same `all-MiniLM-L6-v2 model`
+- Ran into issue with pdf parsing
