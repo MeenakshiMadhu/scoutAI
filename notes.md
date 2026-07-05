@@ -39,3 +39,9 @@
 - Added Resume pdf parsing logic using pdfreader, and resumeProfile.ts for building resume profile ready to embed
 - Added embedding logic for resume using same `all-MiniLM-L6-v2 model`
 - Ran into issue with pdf parsing
+
+## Sunday, July 5 2026
+
+- Todo:
+  - Fix the resume pdf parsing pipeline
+  - Improve the matching logic
