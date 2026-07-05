@@ -15,7 +15,9 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
 
   const [selected, setSelected] = useState<Job | null>(null);
-  const [resumeUploaded] = useState(false);
+  const [resumeUploaded, setResumeUploaded] = useState(false);
+  const [matchProfile, setMatchProfile] = useState<any>(null);
+  const [uploadError, setUploadError] = useState("");
 
   const [q, setQ] = useState("");
   const [loc, setLoc] = useState("");
@@ -24,11 +26,41 @@ export default function Home() {
   const [emp, setEmp] = useState<string[]>([]);
   const [sort, setSort] = useState("newest");
 
+  const [matchSession, setMatchSession] = useState<{
+    profile: { role_family: string; seniority: string; years_experience?: number };
+    embedding: number[];
+  } | null>(null);
+
+  //   FUNCTION to Handle Resume Upload
+  async function handleResume(file: File) {
+    setUploadError("");
+    setLoading(true);
+    const fd = new FormData();
+    fd.append("resume", file);
+    const up = await fetch("/api/upload", { method: "POST", body: fd }).then(
+      (r) => r.json()
+    );
+    if (up.error) {
+      setUploadError(up.error);
+      setLoading(false);
+      return;
+    }
+
+    setMatchProfile({ ...up.profile, debug: up.debug });
+    setMatchSession({ profile: up.profile, embedding: up.embedding });
+    setPage(0);
+    setResumeUploaded(true);
+    setLoading(false);
+  }
+
+  // reset page to 0 whenever filters change
   useEffect(() => {
     setPage(0);
   }, [q, loc, family, locType, emp, sort]);
 
+  // fetch browse jobs — skip when showing resume-matched results
   useEffect(() => {
+    if (resumeUploaded) return;
     const t = setTimeout(async () => {
       setLoading(true);
       const params = new URLSearchParams();
@@ -46,7 +78,33 @@ export default function Home() {
       setLoading(false);
     }, 250);
     return () => clearTimeout(t);
-  }, [q, loc, family.join(","), locType.join(","), emp.join(","), sort, page]);
+  }, [q, loc, family.join(","), locType.join(","), emp.join(","), sort, page, resumeUploaded]);
+
+  // fetch matched jobs when paginating after resume upload
+  useEffect(() => {
+    if (!resumeUploaded || !matchSession) return;
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      const m = await fetch("/api/match", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          profile: matchSession.profile,
+          embedding: matchSession.embedding,
+          page,
+        }),
+      }).then((r) => r.json());
+      if (cancelled) return;
+      setJobs(m.results.map((x: any) => ({ ...x.job, _score: x.score })));
+      setTotal(m.total);
+      setTotalPages(m.totalPages ?? Math.ceil(m.total / (m.size || 12)));
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [page, resumeUploaded, matchSession]);
 
   const hasFilters = family.length || locType.length || emp.length;
 
@@ -83,9 +141,11 @@ export default function Home() {
         </p>
       </header>
 
-      <ResumeUpload
-        onFileSelected={(file) => console.log("selected:", file.name)}
-      />
+      {/* Resume Upload */}
+      <ResumeUpload onFileSelected={handleResume} />
+      {uploadError && (
+        <p className="text-red-500 text-sm mb-4">{uploadError}</p>
+      )}
 
       {/* Filters */}
       <section className="relative z-30 glass-panel rounded-2xl p-4 sm:p-5 mb-6 animate-fade-in stagger-1 overflow-visible">
@@ -189,6 +249,34 @@ export default function Home() {
         </div>
       </section>
 
+      {resumeUploaded && matchProfile && (
+        <div className="mb-4 rounded-lg bg-amber-950/40 border border-amber-800/50 px-4 py-3 space-y-1">
+          <p className="text-sm text-[var(--foreground)]">
+            Showing <b>{matchProfile.role_family}</b> roles near{" "}
+            <b>{matchProfile.seniority}</b> level, ranked by fit.
+          </p>
+          {matchProfile.debug && (
+            <p className="text-xs text-[var(--foreground-muted)] font-mono">
+              Debug: {matchProfile.debug.yearsExperience} yrs exp · full-time role:{" "}
+              {matchProfile.debug.hasFullTimeRole ? "yes" : "no"} · recent:{" "}
+              {matchProfile.debug.mostRecentRole || "—"} · seniority:{" "}
+              {matchProfile.debug.inferredSeniority}
+            </p>
+          )}
+          <button
+            onClick={() => {
+              setResumeUploaded(false);
+              setMatchProfile(null);
+              setMatchSession(null);
+              setPage(0);
+            }}
+            className="text-sm text-amber-300 hover:text-amber-200 underline"
+          >
+            Clear · browse all
+          </button>
+        </div>
+      )}
+
       {/* Result count */}
       <div className="flex items-center justify-between mb-5 animate-fade-in stagger-2">
         <p className="text-sm font-medium text-[var(--foreground-muted)]">
@@ -234,10 +322,7 @@ export default function Home() {
                     onClick={() => setSelected(j)}
                     className="text-left"
                   >
-                    <JobCard
-                      job={j}
-                      selected={selected?.id === j.id}
-                    />
+                    <JobCard job={j} selected={selected?.id === j.id} />
                   </button>
                 ))}
           </div>
@@ -285,9 +370,7 @@ export default function Home() {
                 of {totalPages}
               </span>
               <button
-                onClick={() =>
-                  setPage((p) => Math.min(totalPages - 1, p + 1))
-                }
+                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                 disabled={page >= totalPages - 1}
                 className="btn-outline px-4 py-2 rounded-xl text-sm font-medium"
               >
