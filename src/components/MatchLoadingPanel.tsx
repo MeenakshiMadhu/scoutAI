@@ -17,12 +17,31 @@ const MATCH_PHRASES = [
   "Found your top 20 matches — hang tight!",
 ];
 
+const BROWSE_PHRASES = [
+  "Searching open roles…",
+  "Applying your filters…",
+  "Scanning job titles and descriptions…",
+  "Sorting the best opportunities…",
+  "Almost there — loading results…",
+];
+
+const SUBTITLES: Record<"upload" | "match" | "browse", string> = {
+  upload: "This usually takes a few seconds",
+  match: "Personalizing results from your resume",
+  browse: "Exploring roles across industries",
+};
+
 export default function MatchLoadingPanel({
   mode,
 }: {
-  mode: "upload" | "match";
+  mode: "upload" | "match" | "browse";
 }) {
-  const phrases = mode === "upload" ? UPLOAD_PHRASES : MATCH_PHRASES;
+  const phrases =
+    mode === "upload"
+      ? UPLOAD_PHRASES
+      : mode === "match"
+        ? MATCH_PHRASES
+        : BROWSE_PHRASES;
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
@@ -59,9 +78,7 @@ export default function MatchLoadingPanel({
         {phrases[index]}
       </p>
       <p className="mt-2 text-sm text-[var(--foreground-muted)]">
-        {mode === "upload"
-          ? "This usually takes a few seconds"
-          : "Personalizing results from your resume"}
+        {SUBTITLES[mode]}
       </p>
     </div>
   );

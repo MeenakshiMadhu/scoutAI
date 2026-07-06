@@ -244,6 +244,8 @@ export default function Home() {
     isUploading ||
     (resumeUploaded && matchedPool.length === 0 && loading);
 
+  const isBrowsing = loading && !resumeUploaded;
+
   return (
     <main className="w-full max-w-7xl mx-auto self-stretch px-4 sm:px-6 py-8 lg:py-10 text-center">
       {/* Header */}
@@ -454,14 +456,13 @@ export default function Home() {
             <span className="text-[var(--foreground-muted)]">
               Finding your best-fit roles…
             </span>
+          ) : isBrowsing ? (
+            <span className="text-[var(--foreground-muted)]">
+              Searching roles…
+            </span>
           ) : loading ? (
-            <span className="inline-flex flex-col items-center gap-3">
-              <span className="search-loader" aria-hidden="true">
-                <span className="search-loader-dot" />
-                <span className="search-loader-dot" />
-                <span className="search-loader-dot" />
-              </span>
-              <span>Searching roles…</span>
+            <span className="text-[var(--foreground-muted)]">
+              Updating results…
             </span>
           ) : (
             <>
@@ -495,6 +496,10 @@ export default function Home() {
             {isMatching ? (
               <div className="col-span-full">
                 <MatchLoadingPanel mode={isUploading ? "upload" : "match"} />
+              </div>
+            ) : isBrowsing ? (
+              <div className="col-span-full">
+                <MatchLoadingPanel mode="browse" />
               </div>
             ) : loading
               ? Array.from({ length: selected ? 3 : 6 }).map((_, i) => (
