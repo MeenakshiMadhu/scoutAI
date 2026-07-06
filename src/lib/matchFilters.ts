@@ -80,7 +80,7 @@ export function jobMatchesCandidateYears(
  * Hybrid match pipeline — step 1 & 2 are hard filters; step 3 is semantic rank.
  * 1. Years: JD range/minimum rules (+/-1 padding)
  * 2. Seniority: ±1 level among survivors
- * (Cosine similarity on MiniLM embeddings runs in /api/match after this.)
+ * (Cosine similarity on OpenAI embeddings runs in /api/match after this.)
  */
 export function filterJobsByProfile(
   jobs: Job[],

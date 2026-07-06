@@ -63,7 +63,9 @@ export function normalizePdfText(raw: string): string {
   return text.replace(/\s+/g, " ").trim();
 }
 
-/** Mirror scripts/embed.mjs jobText() so vectors live in the same space */
+import { jobEmbedText } from "@/lib/embedConfig";
+
+/** Same text shape as job corpus — see embedConfig.jobEmbedText */
 export function jobStyleEmbedText(
   title: string,
   roleFamily: string,
@@ -71,10 +73,13 @@ export function jobStyleEmbedText(
   skills: string[],
   body: string
 ): string {
-  return (
-    `${title}. Field: ${roleFamily}. Seniority: ${seniority}. ` +
-    `Skills: ${skills.join(", ")}. ${body.slice(0, 600)}`
-  );
+  return jobEmbedText({
+    title,
+    role_family: roleFamily,
+    seniority,
+    skills,
+    description: body,
+  });
 }
 
 const ROLE_RULES: [RegExp, string][] = [

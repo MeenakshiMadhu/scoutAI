@@ -1,24 +1,30 @@
-// SHARED EMBED HELPER used by both offline script and resume route.
-import { pipeline } from "@xenova/transformers";
+import OpenAI from "openai";
+import { EMBEDDING_MODEL } from "@/lib/embedConfig";
 
-// cache the model across warm invocations — loading is the expensive part
-let _embedder: any = null;
+let _client: OpenAI | null = null;
 
-async function getEmbedder() {
-  if (!_embedder) {
-    _embedder = await pipeline("feature-extraction", "Xenova/all-MiniLM-L6-v2");
+function getOpenAI(): OpenAI {
+  if (!_client) {
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      throw new Error(
+        "OPENAI_API_KEY is not configured. Add it to .env.local or Vercel environment variables."
+      );
+    }
+    _client = new OpenAI({ apiKey });
   }
-  return _embedder;
+  return _client;
 }
 
+/** Embed text with the same model used for jobs (text-embedding-3-small). */
 export async function embedText(text: string): Promise<number[]> {
-  const embedder = await getEmbedder();
-  const res = await embedder(text, { pooling: "mean", normalize: true });
-  return Array.from(res.data as Float32Array);
+  const res = await getOpenAI().embeddings.create({
+    model: EMBEDDING_MODEL,
+    input: text,
+  });
+  return res.data[0].embedding;
 }
 
-// cosine similarity — vectors are already normalized, so this is just the dot product,
-// but we keep the full formula so it's correct even if normalization changes.
 export function cosine(a: number[], b: number[]): number {
   let dot = 0,
     na = 0,

@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { FAMILIES, SENIORITY_ORDER } from "@/lib/store";
 import { embedText } from "@/lib/embed";
+import { EMBEDDING_MODEL } from "@/lib/embedConfig";
 import { normalizePdfText } from "@/lib/resumeProfile";
 
 const MODEL = "gpt-4o-mini";
@@ -20,6 +21,7 @@ export type LLMProfileDebug = {
   summary: string;
   source: "openai";
   model: string;
+  embeddingModel: string;
 };
 
 type LLMExtracted = {
@@ -162,6 +164,7 @@ export async function buildResumeProfile(rawText: string): Promise<{
       summary: parsed.summary,
       source: "openai",
       model: MODEL,
+      embeddingModel: EMBEDDING_MODEL,
     },
   };
 }
