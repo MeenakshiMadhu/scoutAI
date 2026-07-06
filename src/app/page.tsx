@@ -14,7 +14,7 @@ import {
   Job,
 } from "@/lib/store";
 
-type MatchedJob = { job: Job; score: number };
+type MatchedJob = { job: Job; score: number; matchPercent: number };
 
 export default function Home() {
   const [jobs, setJobs] = useState<any[]>([]);
@@ -157,6 +157,9 @@ export default function Home() {
         const matchScores = new Map(
           matchedPool.map((x) => [x.job.id, x.score])
         );
+        const matchPercents = new Map(
+          matchedPool.map((x) => [x.job.id, x.matchPercent])
+        );
         const ranked = queryRankedJobs(
           jobs,
           {
@@ -177,7 +180,11 @@ export default function Home() {
             page * BROWSE_PAGE_SIZE,
             page * BROWSE_PAGE_SIZE + BROWSE_PAGE_SIZE
           )
-          .map(({ job, matchScore }) => ({ ...job, _score: matchScore ?? 0 }));
+          .map(({ job, matchScore }) => ({
+            ...job,
+            _score: matchScore ?? 0,
+            _matchPercent: matchPercents.get(job.id),
+          }));
         setJobs(paged);
         setTotal(total);
         setTotalPages(Math.ceil(total / BROWSE_PAGE_SIZE) || 1);
@@ -474,7 +481,13 @@ export default function Home() {
                       onClick={() => setSelected(j)}
                       className="text-left"
                     >
-                      <JobCard job={j} selected={selected?.id === j.id} />
+                      <JobCard
+                        job={j}
+                        selected={selected?.id === j.id}
+                        matchPercent={
+                          resumeUploaded ? j._matchPercent : undefined
+                        }
+                      />
                     </button>
                   ))
                 : (
@@ -548,7 +561,14 @@ export default function Home() {
               </button>
             </div>
             <div className="h-[calc(100%-2.75rem)]">
-              <JobDetail job={selected} resumeUploaded={resumeUploaded} />
+              <JobDetail
+                job={selected}
+                resumeUploaded={resumeUploaded}
+                matchProfile={matchProfile}
+                matchPercent={
+                  resumeUploaded ? (selected as any)._matchPercent : undefined
+                }
+              />
             </div>
           </aside>
         )}

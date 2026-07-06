@@ -52,6 +52,7 @@ export async function POST(req: NextRequest) {
         title: profile.title,
         skills: profile.skills,
         years_experience: profile.years_experience,
+        summary: debug.summary,
       },
       embedding,
       debug,

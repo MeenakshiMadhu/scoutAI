@@ -1,13 +1,82 @@
+"use client";
+import { useEffect, useState } from "react";
 import { Job } from "@/lib/store";
 import ShareMenu from "@/components/ShareMenu";
+import {
+  matchPercentBg,
+  matchPercentColor,
+} from "@/lib/matchScore";
+
+export type MatchProfile = {
+  title?: string;
+  role_family: string;
+  seniority: string;
+  skills: string[];
+  years_experience?: number;
+  summary?: string;
+};
+
+type InsightsCache = {
+  insights: string[];
+  matchingSkills: string[];
+};
 
 export default function JobDetail({
   job,
   resumeUploaded,
+  matchProfile,
+  matchPercent,
 }: {
   job: Job | null;
   resumeUploaded: boolean;
+  matchProfile?: MatchProfile | null;
+  matchPercent?: number;
 }) {
+  const [insights, setInsights] = useState<InsightsCache | null>(null);
+  const [insightsLoading, setInsightsLoading] = useState(false);
+  const [insightsError, setInsightsError] = useState("");
+
+  useEffect(() => {
+    if (!resumeUploaded || !job || !matchProfile) {
+      setInsights(null);
+      setInsightsError("");
+      return;
+    }
+
+    let cancelled = false;
+    setInsightsLoading(true);
+    setInsightsError("");
+    setInsights(null);
+
+    fetch("/api/insights", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ profile: matchProfile, jobId: job.id }),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (cancelled) return;
+        if (data.error) {
+          setInsightsError(data.error);
+          return;
+        }
+        setInsights({
+          insights: data.insights ?? [],
+          matchingSkills: data.matchingSkills ?? [],
+        });
+      })
+      .catch(() => {
+        if (!cancelled) setInsightsError("Couldn't load match insights");
+      })
+      .finally(() => {
+        if (!cancelled) setInsightsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [job?.id, resumeUploaded, matchProfile]);
+
   if (!job) {
     return (
       <div className="flex h-full flex-col items-center justify-center p-8 text-center bg-[var(--card)]">
@@ -34,6 +103,10 @@ export default function JobDetail({
   }
 
   const lines = job.description.split("\n").filter(Boolean);
+  const percent = matchPercent ?? 0;
+  const highlightSkills = new Set(
+    (insights?.matchingSkills ?? []).map((s) => s.toLowerCase())
+  );
 
   return (
     <div className="detail-scroll h-full overflow-y-auto bg-[var(--card)]">
@@ -69,12 +142,14 @@ export default function JobDetail({
       </div>
 
       <div className="px-6 py-5">
-        {resumeUploaded && (
+        {resumeUploaded && matchProfile && (
           <div className="mb-6 space-y-4">
-            <section className="overflow-hidden rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50 p-4">
+            <section
+              className={`overflow-hidden rounded-xl border bg-gradient-to-br p-4 ${matchPercentBg(percent)}`}
+            >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/70">
                     <svg
                       className="h-4 w-4 text-emerald-600"
                       fill="none"
@@ -89,14 +164,18 @@ export default function JobDetail({
                       />
                     </svg>
                   </div>
-                  <span className="text-sm font-semibold text-emerald-900">
+                  <span className="text-sm font-semibold text-gray-800">
                     Match score
                   </span>
                 </div>
-                <span className="text-2xl font-bold text-emerald-700">—%</span>
+                <span
+                  className={`text-2xl font-bold tabular-nums ${matchPercentColor(percent)}`}
+                >
+                  {matchPercent != null ? `${percent}%` : "—"}
+                </span>
               </div>
-              <p className="mt-2 text-xs text-emerald-700/80">
-                Based on your uploaded resume.
+              <p className="mt-2 text-xs text-gray-600/80">
+                Based on your resume profile and this role&apos;s requirements.
               </p>
             </section>
 
@@ -105,25 +184,97 @@ export default function JobDetail({
                 Top skills & keywords
               </h3>
               <div className="flex flex-wrap gap-1.5">
-                {job.skills.slice(0, 6).map((s) => (
-                  <span
-                    key={s}
-                    className="rounded-lg bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-900 ring-1 ring-inset ring-amber-100"
-                  >
-                    {s}
-                  </span>
-                ))}
+                {job.skills.slice(0, 8).map((s) => {
+                  const matched = highlightSkills.has(s.toLowerCase());
+                  return (
+                    <span
+                      key={s}
+                      className={`rounded-lg px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${
+                        matched
+                          ? "bg-emerald-50 text-emerald-800 ring-emerald-200"
+                          : "bg-amber-50 text-amber-900 ring-amber-100"
+                      }`}
+                    >
+                      {matched && (
+                        <span className="mr-1 text-emerald-600" aria-hidden>
+                          ✓
+                        </span>
+                      )}
+                      {s}
+                    </span>
+                  );
+                })}
               </div>
             </section>
 
-            <section className="rounded-xl border border-dashed border-gray-200 bg-gray-50/50 p-4">
-              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
-                Insights
+            <section className="rounded-xl border border-gray-200 bg-white p-4">
+              <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
+                AI match insights
               </h3>
-              <p className="text-sm leading-relaxed text-gray-500">
-                Personalized fit insights will appear here once matching is
-                enabled.
-              </p>
+              {insightsLoading && (
+                <div
+                  className="rounded-lg border border-amber-100 bg-gradient-to-br from-amber-50/80 to-orange-50/40 p-4"
+                  aria-live="polite"
+                  aria-busy="true"
+                >
+                  <div className="mb-4 flex items-center gap-3">
+                    <div className="relative flex h-9 w-9 shrink-0 items-center justify-center">
+                      <span className="absolute inset-0 rounded-full bg-amber-400/25 animate-ping" />
+                      <svg
+                        className="insights-loading-icon relative h-5 w-5 text-amber-600"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={1.75}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                        />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">
+                        Analyzing your fit…
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        Generating personalized insights
+                      </p>
+                    </div>
+                  </div>
+                  <ul className="space-y-3">
+                    {[0, 1, 2].map((i) => (
+                      <li key={i} className="flex items-start gap-2.5">
+                        <span
+                          className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400 animate-pulse-soft"
+                          style={{ animationDelay: `${i * 0.2}s` }}
+                        />
+                        <div
+                          className="insights-loading-bar h-3 flex-1 rounded-full"
+                          style={{ animationDelay: `${i * 0.15}s` }}
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {!insightsLoading && insightsError && (
+                <p className="text-sm text-red-500">{insightsError}</p>
+              )}
+              {!insightsLoading && insights && insights.insights.length > 0 && (
+                <ul className="space-y-2.5">
+                  {insights.insights.map((line, i) => (
+                    <li
+                      key={i}
+                      className="flex gap-2.5 text-sm leading-relaxed text-gray-700"
+                    >
+                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" />
+                      {line}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </section>
           </div>
         )}

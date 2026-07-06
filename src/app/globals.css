@@ -190,3 +190,30 @@ body {
 .stagger-1 { animation-delay: 0.05s; }
 .stagger-2 { animation-delay: 0.1s; }
 .stagger-3 { animation-delay: 0.15s; }
+
+@keyframes insights-glow {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(0.95);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.insights-loading-icon {
+  animation: insights-glow 1.6s ease-in-out infinite;
+}
+
+.insights-loading-bar {
+  animation: shimmer 1.5s infinite;
+  background: linear-gradient(
+    90deg,
+    rgba(251, 191, 36, 0.08) 25%,
+    rgba(251, 191, 36, 0.18) 50%,
+    rgba(251, 191, 36, 0.08) 75%
+  );
+  background-size: 200% 100%;
+}

@@ -1,4 +1,5 @@
 import { Job } from "@/lib/store";
+import { matchPercentColor } from "@/lib/matchScore";
 
 function timeAgo(iso: string): string {
   const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
@@ -21,9 +22,11 @@ const SENIORITY_STYLES: Record<string, string> = {
 export default function JobCard({
   job,
   selected,
+  matchPercent,
 }: {
   job: Job;
   selected?: boolean;
+  matchPercent?: number;
 }) {
   const seniorityStyle =
     SENIORITY_STYLES[job.seniority] ?? "bg-gray-50 text-gray-700 ring-gray-100";
@@ -47,9 +50,18 @@ export default function JobCard({
         <h3 className="font-semibold leading-snug text-gray-900 pr-1">
           {job.title}
         </h3>
-        <span className="shrink-0 rounded-full bg-gray-50 px-2 py-0.5 text-[11px] font-medium text-gray-400 whitespace-nowrap">
-          {timeAgo(job.date_posted)}
-        </span>
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          {matchPercent != null && (
+            <span
+              className={`rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold tabular-nums ring-1 ring-inset ring-emerald-100 ${matchPercentColor(matchPercent)}`}
+            >
+              {matchPercent}% match
+            </span>
+          )}
+          <span className="rounded-full bg-gray-50 px-2 py-0.5 text-[11px] font-medium text-gray-400 whitespace-nowrap">
+            {timeAgo(job.date_posted)}
+          </span>
+        </div>
       </div>
 
       <p className="mt-1 text-sm font-medium text-amber-900/80">
