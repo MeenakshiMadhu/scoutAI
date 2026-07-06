@@ -18,12 +18,12 @@ export function attachMatchPercents<T extends { score: number }>(
 export function matchPercentColor(percent: number): string {
   if (percent >= 85) return "text-emerald-700";
   if (percent >= 75) return "text-emerald-600";
-  if (percent >= 68) return "text-amber-700";
-  return "text-amber-600";
+  if (percent >= 68) return "text-[#c94a3d]";
+  return "text-[var(--coral)]";
 }
 
 export function matchPercentBg(percent: number): string {
   if (percent >= 85) return "from-emerald-50 to-teal-50 border-emerald-200";
-  if (percent >= 75) return "from-emerald-50/80 to-amber-50/60 border-emerald-200/80";
-  return "from-amber-50 to-orange-50/60 border-amber-200";
+  if (percent >= 75) return "from-emerald-50/80 to-peach/20 border-emerald-200/80";
+  return "from-peach/15 to-white border-peach/40";
 }

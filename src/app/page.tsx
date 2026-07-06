@@ -5,6 +5,7 @@ import JobDetail from "@/components/JobDetail";
 import MultiSelect from "@/components/MultiSelect";
 import SingleSelect from "@/components/SingleSelect";
 import ResumeUpload from "@/components/ResumeUpload";
+import MatchLoadingPanel from "@/components/MatchLoadingPanel";
 import { BROWSE_PAGE_SIZE, queryRankedJobs } from "@/lib/jobBrowse";
 import {
   FAMILIES,
@@ -22,6 +23,7 @@ export default function Home() {
   const [totalPages, setTotalPages] = useState(0);
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   const [selected, setSelected] = useState<Job | null>(null);
   const [resumeUploaded, setResumeUploaded] = useState(false);
@@ -48,6 +50,7 @@ export default function Home() {
   const [matchedPool, setMatchedPool] = useState<MatchedJob[]>([]);
 
   function clearMatchMode() {
+    setIsUploading(false);
     setResumeUploaded(false);
     setMatchProfile(null);
     setMatchSession(null);
@@ -61,6 +64,7 @@ export default function Home() {
   async function handleResume(file: File) {
     setSelected(null);
     setUploadError("");
+    setIsUploading(true);
     setLoading(true);
     const fd = new FormData();
     fd.append("resume", file);
@@ -69,6 +73,7 @@ export default function Home() {
     );
     if (up.error) {
       setUploadError(up.error);
+      setIsUploading(false);
       setLoading(false);
       return;
     }
@@ -78,7 +83,8 @@ export default function Home() {
     setSort("match");
     setPage(0);
     setResumeUploaded(true);
-    setLoading(false);
+    setIsUploading(false);
+    // loading stays true — match fetch effect picks up from here
   }
 
   // reset page and close detail when filters or sort change
@@ -150,9 +156,9 @@ export default function Home() {
 
   // filter/sort/paginate within the fixed top-20 match pool
   useEffect(() => {
-    if (!resumeUploaded) return;
-    const t = setTimeout(
-      () => {
+    if (!resumeUploaded || !matchedPool.length) return;
+    setLoading(true);
+    const t = setTimeout(() => {
         const jobs = matchedPool.map((x) => x.job);
         const matchScores = new Map(
           matchedPool.map((x) => [x.job.id, x.score])
@@ -188,8 +194,9 @@ export default function Home() {
         setJobs(paged);
         setTotal(total);
         setTotalPages(Math.ceil(total / BROWSE_PAGE_SIZE) || 1);
+        setLoading(false);
       },
-      resumeUploaded && matchedPool.length ? 250 : 0
+      250
     );
     return () => clearTimeout(t);
   }, [
@@ -230,12 +237,16 @@ export default function Home() {
     seniority.length > 0 ||
     recentWeek;
 
+  const isMatching =
+    isUploading ||
+    (resumeUploaded && matchedPool.length === 0 && loading);
+
   return (
-    <main className="w-full max-w-7xl mx-auto self-stretch px-4 sm:px-6 py-8 lg:py-10">
+    <main className="w-full max-w-7xl mx-auto self-stretch px-4 sm:px-6 py-8 lg:py-10 text-center">
       {/* Header */}
       <header className="mb-8 w-full animate-fade-in">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-amber-800 to-amber-600 shadow-lg shadow-amber-950/40">
+        <div className="flex items-center justify-center gap-3 mb-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--coral)] shadow-lg shadow-black/25">
             <svg
               className="h-5 w-5 text-white"
               fill="none"
@@ -250,14 +261,14 @@ export default function Home() {
               />
             </svg>
           </div>
-          <span className="text-xs font-semibold uppercase tracking-widest text-amber-300/80">
+          <span className="text-xs font-semibold uppercase tracking-widest text-[var(--peach)]">
             AI-Powered Career Search
           </span>
         </div>
         <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-gradient">
           scoutAI
         </h1>
-        <p className="mt-2 max-w-xl text-base text-[var(--foreground-muted)]">
+        <p className="mt-2 max-w-xl mx-auto text-base text-[var(--foreground-muted)]">
           Browse open roles across industries. Upload your resume to unlock
           personalized matches tailored to your experience.
         </p>
@@ -266,13 +277,13 @@ export default function Home() {
       {/* Resume Upload */}
       <ResumeUpload onFileSelected={handleResume} onClear={clearMatchMode} />
       {uploadError && (
-        <p className="text-red-500 text-sm mb-4">{uploadError}</p>
+        <p className="text-red-500 text-sm mb-4 text-center">{uploadError}</p>
       )}
 
       {/* Filters */}
       <section className="relative z-30 w-full glass-panel rounded-2xl p-4 sm:p-5 mb-6 animate-fade-in stagger-1 overflow-visible">
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-wrap gap-3 w-full">
+        <div className="flex flex-col items-center gap-3">
+          <div className="flex flex-wrap gap-3 w-full max-w-3xl justify-center">
             <div className="relative flex-[2] min-w-[220px]">
               <svg
                 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--foreground-muted)] pointer-events-none"
@@ -346,7 +357,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 w-full">
+          <div className="flex flex-wrap items-center justify-center gap-2 w-full">
             <MultiSelect
               label="Business Area"
               options={FAMILIES}
@@ -382,7 +393,7 @@ export default function Home() {
                 className={`h-1.5 w-1.5 rounded-full shrink-0 transition-colors
                   ${
                     recentWeek
-                      ? "bg-amber-400"
+                      ? "bg-[var(--coral)]"
                       : "bg-[var(--foreground-muted)]/40"
                   }`}
                 aria-hidden
@@ -403,7 +414,7 @@ export default function Home() {
                 Clear filters
               </button>
             )}
-            <div className="flex items-center gap-2 ml-auto shrink-0">
+            <div className="flex items-center justify-center gap-2 shrink-0">
               <span className="hidden sm:inline text-xs text-[var(--foreground-muted)]">
                 Sort
               </span>
@@ -419,14 +430,14 @@ export default function Home() {
       </section>
 
       {resumeUploaded && matchProfile && (
-        <div className="mb-4 w-full rounded-lg bg-amber-950/40 border border-amber-800/50 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+        <div className="mb-4 w-full rounded-lg bg-[var(--background-elevated)] border border-[var(--border-strong)] px-4 py-3 flex flex-col items-center justify-center gap-3 text-center">
           <p className="text-sm text-[var(--foreground)]">
             Top 20 matches for your profile - add more filters to refine this
             list!
           </p>
           <button
             onClick={clearMatchMode}
-            className="text-sm text-amber-300 hover:text-amber-200 underline shrink-0"
+            className="text-sm text-[var(--peach)] hover:text-[var(--beige)] underline shrink-0"
           >
             Clear · Browse all jobs
           </button>
@@ -434,12 +445,20 @@ export default function Home() {
       )}
 
       {/* Result count */}
-      <div className="flex w-full items-center justify-between mb-5 animate-fade-in stagger-2">
+      <div className="flex w-full flex-col items-center justify-center gap-2 mb-5 animate-fade-in stagger-2 relative">
         <p className="text-sm font-medium text-[var(--foreground-muted)]">
-          {loading ? (
-            <span className="inline-flex items-center gap-2 animate-pulse-soft">
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-500" />
-              Searching roles…
+          {isMatching ? (
+            <span className="text-[var(--foreground-muted)]">
+              Finding your best-fit roles…
+            </span>
+          ) : loading ? (
+            <span className="inline-flex flex-col items-center gap-3">
+              <span className="search-loader" aria-hidden="true">
+                <span className="search-loader-dot" />
+                <span className="search-loader-dot" />
+                <span className="search-loader-dot" />
+              </span>
+              <span>Searching roles…</span>
             </span>
           ) : (
             <>
@@ -453,7 +472,7 @@ export default function Home() {
         {selected && (
           <button
             onClick={() => setSelected(null)}
-            className="lg:hidden text-sm btn-ghost px-3 py-1.5 rounded-lg"
+            className="lg:hidden text-sm btn-ghost px-3 py-1.5 rounded-lg absolute right-0 top-0"
           >
             Close detail ✕
           </button>
@@ -461,7 +480,7 @@ export default function Home() {
       </div>
 
       {/* Split layout */}
-      <div className="flex w-full min-w-0 gap-5 animate-fade-in stagger-3 relative z-0">
+      <div className="flex w-full min-w-0 gap-5 animate-fade-in stagger-3 relative z-0 text-left">
         <div
           className={`min-w-0 ${selected ? "w-full lg:w-1/2" : "w-full"}`}
         >
@@ -470,7 +489,11 @@ export default function Home() {
               selected ? "grid-cols-1" : "md:grid-cols-2 lg:grid-cols-3"
             }`}
           >
-            {loading
+            {isMatching ? (
+              <div className="col-span-full">
+                <MatchLoadingPanel mode={isUploading ? "upload" : "match"} />
+              </div>
+            ) : loading
               ? Array.from({ length: selected ? 3 : 6 }).map((_, i) => (
                   <JobCardSkeleton key={i} />
                 ))

@@ -54,7 +54,7 @@ export default function SingleSelect({
                     setOpen(false);
                   }}
                   className={`w-full text-left px-3 py-2 text-sm transition-colors
-                    ${selected ? "text-amber-200 bg-amber-900/50" : "text-[var(--foreground)] hover:bg-white/8"}`}
+                    ${selected ? "text-[var(--beige)] bg-[var(--coral)]/20" : "text-[var(--foreground)] hover:bg-white/8"}`}
                 >
                   {opt.label}
                 </button>

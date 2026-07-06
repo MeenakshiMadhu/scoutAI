@@ -37,15 +37,14 @@ export default function ResumeUpload({
 
   return (
     <section className="relative mb-8 w-full overflow-hidden rounded-2xl glass-panel animate-fade-in stagger-1">
-      {/* gradient accent strip */}
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-600/60 to-transparent" />
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--coral)]/60 to-transparent" />
 
-      <div className="flex items-start justify-between gap-6 flex-wrap p-5 sm:p-6">
-        <div className="max-w-md">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-800/30">
+      <div className="flex flex-col items-center text-center gap-6 p-5 sm:p-6">
+        <div className="max-w-lg">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--coral)]/20">
               <svg
-                className="h-4 w-4 text-amber-300"
+                className="h-4 w-4 text-[var(--peach)]"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -65,11 +64,11 @@ export default function ResumeUpload({
           <p className="text-sm leading-relaxed text-[var(--foreground-muted)]">
             Upload your resume and we&apos;ll rank openings by how well they fit
             your experience, skills, and seniority. Your file is read to find
-            matches - never stored.
+            matches — never stored.
           </p>
         </div>
 
-        <div className="flex-1 min-w-[260px] max-w-sm">
+        <div className="w-full max-w-sm">
           <div
             onClick={() => inputRef.current?.click()}
             onDragOver={(e) => {
@@ -85,10 +84,10 @@ export default function ResumeUpload({
             className={`cursor-pointer rounded-xl border-2 border-dashed p-5 text-center transition-all duration-200
               ${
                 dragging
-                  ? "border-amber-500 bg-amber-800/15 scale-[1.01]"
+                  ? "border-[var(--coral)] bg-[var(--coral)]/10 scale-[1.01]"
                   : fileName
                   ? "border-emerald-500/50 bg-emerald-500/5"
-                  : "border-[var(--border-strong)] hover:border-amber-500/50 hover:bg-white/[0.03]"
+                  : "border-[var(--border-strong)] hover:border-[var(--coral)]/50 hover:bg-white/[0.03]"
               }`}
           >
             <input
@@ -115,7 +114,7 @@ export default function ResumeUpload({
                     />
                   </svg>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-[var(--foreground)]">
+                <div className="flex items-center justify-center gap-2 text-sm text-[var(--foreground)]">
                   <span className="font-medium truncate max-w-[180px]">
                     {fileName}
                   </span>
@@ -124,7 +123,7 @@ export default function ResumeUpload({
                       e.stopPropagation();
                       clearFile();
                     }}
-                    className="text-amber-300 hover:text-amber-200 underline underline-offset-2 shrink-0"
+                    className="text-[var(--peach)] hover:text-[var(--beige)] underline underline-offset-2 shrink-0"
                   >
                     Remove
                   </button>
@@ -148,7 +147,7 @@ export default function ResumeUpload({
                   </svg>
                 </div>
                 <p className="text-sm text-[var(--foreground-muted)]">
-                  <span className="font-medium text-amber-300">
+                  <span className="font-medium text-[var(--peach)]">
                     Click to upload
                   </span>{" "}
                   or drag & drop
@@ -160,7 +159,7 @@ export default function ResumeUpload({
             )}
           </div>
           {error && (
-            <p className="text-sm text-red-400 mt-2 flex items-center gap-1.5">
+            <p className="text-sm text-red-400 mt-2 flex items-center justify-center gap-1.5">
               <svg
                 className="h-3.5 w-3.5 shrink-0"
                 fill="none"

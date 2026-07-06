@@ -14,6 +14,7 @@ const SENIORITY_STYLES: Record<string, string> = {
   Junior: "bg-stone-100 text-stone-700 ring-stone-200",
   Mid: "bg-orange-50 text-orange-800 ring-orange-100",
   Senior: "bg-emerald-50 text-emerald-700 ring-emerald-100",
+  Lead: "bg-amber-50 text-amber-700 ring-amber-100",
   Staff: "bg-amber-50 text-amber-700 ring-amber-100",
   Director: "bg-orange-50 text-orange-700 ring-orange-100",
   VP: "bg-rose-50 text-rose-700 ring-rose-100",
@@ -33,19 +34,13 @@ export default function JobCard({
 
   return (
     <article
-      className={`group relative h-full rounded-2xl border bg-[var(--card)] p-5 text-[var(--card-foreground)] transition-all duration-200
+      className={`h-full rounded-2xl border bg-[var(--card)] p-5 text-[var(--card-foreground)] transition-shadow duration-200
         ${
           selected
-            ? "border-amber-700 shadow-xl shadow-amber-950/15 ring-2 ring-amber-700/50"
-            : "border-gray-200/70 shadow-sm hover:-translate-y-1 hover:border-amber-200/80 hover:shadow-lg hover:shadow-amber-950/8"
+            ? "border-[var(--coral)] shadow-lg shadow-black/10 ring-2 ring-[var(--coral)]/40"
+            : "border-gray-200/70 shadow-sm hover:shadow-[0_4px_20px_rgba(0,0,0,0.08)]"
         }`}
     >
-      <div
-        className={`absolute inset-x-0 top-0 h-0.5 rounded-t-2xl bg-gradient-to-r from-amber-900 via-amber-700 to-amber-500 transition-opacity duration-200 ${
-          selected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-        }`}
-      />
-
       <div className="flex items-start justify-between gap-3">
         <h3 className="font-semibold leading-snug text-gray-900 pr-1">
           {job.title}
@@ -64,7 +59,7 @@ export default function JobCard({
         </div>
       </div>
 
-      <p className="mt-1 text-sm font-medium text-amber-900/80">
+      <p className="mt-1 text-sm font-medium text-gray-600">
         {job.company}
       </p>
 

@@ -40,7 +40,7 @@ export default function MultiSelect({
         type="button"
         onClick={() => setOpen((o) => !o)}
         className={`filter-input rounded-xl px-3 py-2.5 text-sm flex items-center gap-2 cursor-pointer
-          ${selected.length > 0 ? "border-amber-500/50 text-amber-200" : ""}`}
+          ${selected.length > 0 ? "filter-input-active" : ""}`}
       >
         {labelText}
         <span className={`transition-transform ${open ? "rotate-180" : ""}`}>
@@ -61,13 +61,13 @@ export default function MultiSelect({
                 <label
                   key={opt}
                   className={`flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer transition-colors
-                    ${checked ? "text-amber-200 bg-amber-900/50" : "text-[var(--foreground)] hover:bg-white/8"}`}
+                    ${checked ? "text-[var(--beige)] bg-[var(--coral)]/20" : "text-[var(--foreground)] hover:bg-white/8"}`}
                 >
                   <input
                     type="checkbox"
                     checked={checked}
                     onChange={() => toggle(opt)}
-                    className="accent-amber-600 rounded"
+                    className="accent-[var(--coral)] rounded"
                   />
                   {opt}
                 </label>

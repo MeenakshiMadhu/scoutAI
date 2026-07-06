@@ -54,3 +54,6 @@
 - Major change: Changed embedding model from MiniLM to OpenAI `text-embedding-3-small`.
   - Reason: MiniLM ran locally in development, but ONNX's native runtime isn't available on Vercel's serverless functions, so the deployed version uses OpenAI embeddings for both jobs and resumes to keep a single, consistent vector space with zero extra infrastructure.
 - Fixed detailed view closing bug
+- Added seniority filter, and filtering on Top 20 AI matched jobs.
+- Added AI job match insights and match score
+- updated UI

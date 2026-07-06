@@ -74,9 +74,9 @@ export default function JobDetail({
   if (!job) {
     return (
       <div className="flex h-full flex-col items-center justify-center p-8 text-center bg-[var(--card)]">
-        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50">
+        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--peach)]/20">
           <svg
-            className="h-7 w-7 text-amber-700"
+            className="h-7 w-7 text-[var(--coral)]"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -101,13 +101,13 @@ export default function JobDetail({
 
   return (
     <div className="detail-scroll h-full overflow-y-auto bg-[var(--card)]">
-      <div className="border-b border-gray-100 bg-gradient-to-br from-amber-50/80 via-white to-stone-50/40 px-6 pb-5 pt-5">
+      <div className="border-b border-gray-100 bg-gradient-to-br from-[var(--peach)]/15 via-white to-white px-6 pb-5 pt-5">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h2 className="text-xl font-bold tracking-tight text-gray-900 leading-snug">
               {job.title}
             </h2>
-            <p className="mt-1 text-sm font-semibold text-amber-900">
+            <p className="mt-1 text-sm font-semibold text-gray-600">
               {job.company}
             </p>
           </div>
@@ -216,15 +216,15 @@ export default function JobDetail({
               </h3>
               {insightsLoading && (
                 <div
-                  className="rounded-lg border border-amber-100 bg-gradient-to-br from-amber-50/80 to-orange-50/40 p-4"
+                  className="rounded-lg border border-[var(--peach)]/30 bg-[var(--peach)]/10 p-4"
                   aria-live="polite"
                   aria-busy="true"
                 >
                   <div className="mb-4 flex items-center gap-3">
                     <div className="relative flex h-9 w-9 shrink-0 items-center justify-center">
-                      <span className="absolute inset-0 rounded-full bg-amber-400/25 animate-ping" />
+                      <span className="absolute inset-0 rounded-full bg-[var(--coral)]/20 animate-ping" />
                       <svg
-                        className="insights-loading-icon relative h-5 w-5 text-amber-600"
+                        className="insights-loading-icon relative h-5 w-5 text-[var(--coral)]"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -250,7 +250,7 @@ export default function JobDetail({
                     {[0, 1, 2].map((i) => (
                       <li key={i} className="flex items-start gap-2.5">
                         <span
-                          className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400 animate-pulse-soft"
+                          className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--coral)] animate-pulse-soft"
                           style={{ animationDelay: `${i * 0.2}s` }}
                         />
                         <div
@@ -272,7 +272,7 @@ export default function JobDetail({
                       key={i}
                       className="flex gap-2.5 text-sm leading-relaxed text-gray-700"
                     >
-                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" />
+                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--coral)]" />
                       {line}
                     </li>
                   ))}
@@ -294,7 +294,7 @@ export default function JobDetail({
                 key={i}
                 className={
                   line.trim().startsWith("-")
-                    ? "relative pl-4 before:absolute before:left-0 before:font-bold before:text-amber-700 before:content-['•']"
+                    ? "relative pl-4 before:absolute before:left-0 before:font-bold before:text-[var(--coral)] before:content-['•']"
                     : ""
                 }
               >
