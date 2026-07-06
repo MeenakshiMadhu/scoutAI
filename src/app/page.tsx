@@ -5,7 +5,16 @@ import JobDetail from "@/components/JobDetail";
 import MultiSelect from "@/components/MultiSelect";
 import SingleSelect from "@/components/SingleSelect";
 import ResumeUpload from "@/components/ResumeUpload";
-import { FAMILIES, LOCATION_TYPES, EMPLOYMENT_TYPES, SENIORITY_ORDER, Job } from "@/lib/store";
+import { BROWSE_PAGE_SIZE, queryRankedJobs } from "@/lib/jobBrowse";
+import {
+  FAMILIES,
+  LOCATION_TYPES,
+  EMPLOYMENT_TYPES,
+  SENIORITY_ORDER,
+  Job,
+} from "@/lib/store";
+
+type MatchedJob = { job: Job; score: number };
 
 export default function Home() {
   const [jobs, setJobs] = useState<any[]>([]);
@@ -29,14 +38,21 @@ export default function Home() {
   const [sort, setSort] = useState("newest");
 
   const [matchSession, setMatchSession] = useState<{
-    profile: { role_family: string; seniority: string; years_experience?: number };
+    profile: {
+      role_family: string;
+      seniority: string;
+      years_experience?: number;
+    };
     embedding: number[];
   } | null>(null);
+  const [matchedPool, setMatchedPool] = useState<MatchedJob[]>([]);
 
   function clearMatchMode() {
     setResumeUploaded(false);
     setMatchProfile(null);
     setMatchSession(null);
+    setMatchedPool([]);
+    setSort("newest");
     setPage(0);
     setSelected(null);
   }
@@ -59,6 +75,7 @@ export default function Home() {
 
     setMatchProfile(up.profile);
     setMatchSession({ profile: up.profile, embedding: up.embedding });
+    setSort("match");
     setPage(0);
     setResumeUploaded(true);
     setLoading(false);
@@ -92,11 +109,25 @@ export default function Home() {
       setLoading(false);
     }, 250);
     return () => clearTimeout(t);
-  }, [q, loc, family.join(","), locType.join(","), emp.join(","), seniority.join(","), recentWeek, sort, page, resumeUploaded]);
+  }, [
+    q,
+    loc,
+    family.join(","),
+    locType.join(","),
+    emp.join(","),
+    seniority.join(","),
+    recentWeek,
+    sort,
+    page,
+    resumeUploaded,
+  ]);
 
-  // fetch matched jobs when paginating after resume upload
+  // fetch top 20 matches once per resume session — filters apply client-side only
   useEffect(() => {
-    if (!resumeUploaded || !matchSession) return;
+    if (!resumeUploaded || !matchSession) {
+      setMatchedPool([]);
+      return;
+    }
     let cancelled = false;
     (async () => {
       setLoading(true);
@@ -106,19 +137,84 @@ export default function Home() {
         body: JSON.stringify({
           profile: matchSession.profile,
           embedding: matchSession.embedding,
-          page,
         }),
       }).then((r) => r.json());
       if (cancelled) return;
-      setJobs(m.results.map((x: any) => ({ ...x.job, _score: x.score })));
-      setTotal(m.total);
-      setTotalPages(m.totalPages ?? Math.ceil(m.total / (m.size || 12)));
+      setMatchedPool(m.results ?? []);
       setLoading(false);
     })();
     return () => {
       cancelled = true;
     };
-  }, [page, resumeUploaded, matchSession]);
+  }, [resumeUploaded, matchSession]);
+
+  // filter/sort/paginate within the fixed top-20 match pool
+  useEffect(() => {
+    if (!resumeUploaded) return;
+    const t = setTimeout(
+      () => {
+        const jobs = matchedPool.map((x) => x.job);
+        const matchScores = new Map(
+          matchedPool.map((x) => [x.job.id, x.score])
+        );
+        const ranked = queryRankedJobs(
+          jobs,
+          {
+            q,
+            loc,
+            family,
+            location_type: locType,
+            employment_type: emp,
+            seniority,
+            posted_within: recentWeek ? 7 : undefined,
+            sort,
+          },
+          matchScores
+        );
+        const total = ranked.length;
+        const paged = ranked
+          .slice(
+            page * BROWSE_PAGE_SIZE,
+            page * BROWSE_PAGE_SIZE + BROWSE_PAGE_SIZE
+          )
+          .map(({ job, matchScore }) => ({ ...job, _score: matchScore ?? 0 }));
+        setJobs(paged);
+        setTotal(total);
+        setTotalPages(Math.ceil(total / BROWSE_PAGE_SIZE) || 1);
+      },
+      resumeUploaded && matchedPool.length ? 250 : 0
+    );
+    return () => clearTimeout(t);
+  }, [
+    q,
+    loc,
+    family.join(","),
+    locType.join(","),
+    emp.join(","),
+    seniority.join(","),
+    recentWeek,
+    sort,
+    page,
+    resumeUploaded,
+    matchedPool,
+  ]);
+
+  const sortOptions = resumeUploaded
+    ? [
+        { value: "match", label: "Best match" },
+        { value: "newest", label: "Newest" },
+        { value: "oldest", label: "Oldest" },
+        { value: "pay_high", label: "Pay: high → low" },
+        { value: "pay_low", label: "Pay: low → high" },
+        { value: "title", label: "Title A–Z" },
+      ]
+    : [
+        { value: "newest", label: "Newest" },
+        { value: "oldest", label: "Oldest" },
+        { value: "pay_high", label: "Pay: high → low" },
+        { value: "pay_low", label: "Pay: low → high" },
+        { value: "title", label: "Title A–Z" },
+      ];
 
   const hasFilters =
     family.length > 0 ||
@@ -188,8 +284,20 @@ export default function Home() {
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="Job title or keywords"
-                className="filter-input w-full rounded-xl pl-9 pr-3 py-2.5 text-sm"
+                className="filter-input w-full rounded-xl pl-9 pr-9 py-2.5 text-sm"
               />
+              {q && (
+                <button
+                  type="button"
+                  onClick={() => setQ("")}
+                  aria-label="Clear search"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md p-0.5 text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-white/8"
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
             </div>
             <div className="relative flex-1 min-w-[160px]">
               <svg
@@ -214,8 +322,20 @@ export default function Home() {
                 value={loc}
                 onChange={(e) => setLoc(e.target.value)}
                 placeholder="Location"
-                className="filter-input w-full rounded-xl pl-9 pr-3 py-2.5 text-sm"
+                className="filter-input w-full rounded-xl pl-9 pr-9 py-2.5 text-sm"
               />
+              {loc && (
+                <button
+                  type="button"
+                  onClick={() => setLoc("")}
+                  aria-label="Clear location"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md p-0.5 text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-white/8"
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
             </div>
           </div>
 
@@ -246,10 +366,20 @@ export default function Home() {
             />
             <button
               type="button"
+              aria-pressed={recentWeek}
               onClick={() => setRecentWeek((v) => !v)}
-              className={`filter-input rounded-xl px-3 py-2.5 text-sm cursor-pointer
-                ${recentWeek ? "border-amber-500/50 text-amber-200" : ""}`}
+              className={`filter-input rounded-xl px-3 py-2.5 text-sm cursor-pointer flex items-center gap-2
+                ${recentWeek ? "filter-input-active" : "hover:bg-white/8"}`}
             >
+              <span
+                className={`h-1.5 w-1.5 rounded-full shrink-0 transition-colors
+                  ${
+                    recentWeek
+                      ? "bg-amber-400"
+                      : "bg-[var(--foreground-muted)]/40"
+                  }`}
+                aria-hidden
+              />
               Last 7 days
             </button>
             {hasFilters && (
@@ -274,13 +404,7 @@ export default function Home() {
                 label="Sort by"
                 value={sort}
                 onChange={setSort}
-                options={[
-                  { value: "newest", label: "Newest" },
-                  { value: "oldest", label: "Oldest" },
-                  { value: "pay_high", label: "Pay: high → low" },
-                  { value: "pay_low", label: "Pay: low → high" },
-                  { value: "title", label: "Title A–Z" },
-                ]}
+                options={sortOptions}
               />
             </div>
           </div>
@@ -290,13 +414,14 @@ export default function Home() {
       {resumeUploaded && matchProfile && (
         <div className="mb-4 rounded-lg bg-amber-950/40 border border-amber-800/50 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-[var(--foreground)]">
-            Top 20 jobs matched for your profile
+            Top 20 matches for your profile - add more filters to refine this
+            list!
           </p>
           <button
             onClick={clearMatchMode}
             className="text-sm text-amber-300 hover:text-amber-200 underline shrink-0"
           >
-            Clear · browse all
+            Clear · Browse all jobs
           </button>
         </div>
       )}

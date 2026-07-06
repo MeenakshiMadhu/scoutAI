@@ -74,6 +74,13 @@ body {
   background: rgba(255, 255, 255, 0.08);
 }
 
+.filter-input-active {
+  border-color: rgba(245, 158, 11, 0.55);
+  color: rgb(253, 230, 138);
+  background: rgba(245, 158, 11, 0.14);
+  box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.2);
+}
+
 .btn-ghost {
   color: var(--foreground-muted);
   transition: color 0.15s, background 0.15s;
