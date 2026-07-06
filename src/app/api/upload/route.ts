@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PdfReader } from "pdfreader";
-import { buildResumeProfile } from "@/lib/resumeProfile";
+import { buildResumeProfile } from "@/lib/llmResume";
 
 function extractPdfText(buf: Buffer): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -49,6 +49,8 @@ export async function POST(req: NextRequest) {
       profile: {
         role_family: profile.role_family,
         seniority: profile.seniority,
+        title: profile.title,
+        skills: profile.skills,
         years_experience: profile.years_experience,
       },
       embedding,

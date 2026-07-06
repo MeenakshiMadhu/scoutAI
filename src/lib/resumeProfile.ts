@@ -1,6 +1,3 @@
-import { nearestFamily, familyScores } from "@/lib/store";
-import { embedText } from "@/lib/embed";
-
 /** pdfreader often glues words — "SoftwareEngineer", "Jul2022-Jul2024" */
 /** Some PDFs export with a space between every letter — "S o f t w a r e" */
 function collapsePerLetterSpacing(raw: string): string {
@@ -425,72 +422,4 @@ export function inferSeniority(text: string): string {
   if (yrs >= 2) return "Mid";
   if (yrs >= 0.5) return "Junior";
   return "Junior";
-}
-
-export type ResumeProfile = {
-  role_family: string;
-  seniority: string;
-  title: string;
-  skills: string[];
-  years_experience: number;
-};
-
-export type ProfileDebug = {
-  normalizedPreview: string;
-  ruleBasedFamily: string | null;
-  centroidTopFamilies: [string, number][];
-  yearsExperience: number;
-  embedTextPreview: string;
-  mostRecentRole: string;
-  hasFullTimeRole: boolean;
-  inferredSeniority: string;
-};
-
-export async function buildResumeProfile(rawText: string): Promise<{
-  profile: ResumeProfile;
-  embedding: number[];
-  debug: ProfileDebug;
-}> {
-  const text = normalizePdfText(rawText).slice(0, 8000);
-  const exp = getExperienceSection(text);
-  const fullTime = hasFullTimeRole(exp);
-  const title = inferTitle(text);
-  const skills = extractSkills(text);
-  const seniority = inferSeniority(text);
-  const years_experience = estimateYearsExperience(text);
-
-  // quick structured pass for centroid (same shape as jobs)
-  const ruleFamily = inferRoleFamilyFromText(text);
-  const draftFamily = ruleFamily ?? "Software Engineering";
-  const draftEmbed = await embedText(
-    jobStyleEmbedText(title, draftFamily, seniority, skills, text)
-  );
-  const centroidTop = familyScores(draftEmbed)
-    .slice(0, 5)
-    .map(([f, s]) => [f, Math.round(s * 10000) / 10000] as [string, number]);
-
-  const role_family = ruleFamily ?? nearestFamily(draftEmbed);
-  const embedTextFinal = jobStyleEmbedText(
-    title,
-    role_family,
-    seniority,
-    skills,
-    text
-  );
-  const embedding = await embedText(embedTextFinal);
-
-  return {
-    profile: { role_family, seniority, title, skills, years_experience },
-    embedding,
-    debug: {
-      normalizedPreview: text.slice(0, 400),
-      ruleBasedFamily: ruleFamily,
-      centroidTopFamilies: centroidTop,
-      yearsExperience: years_experience,
-      embedTextPreview: embedTextFinal.slice(0, 300),
-      mostRecentRole: getMostRecentRoleTitle(text),
-      hasFullTimeRole: fullTime,
-      inferredSeniority: seniority,
-    },
-  };
 }

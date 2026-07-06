@@ -252,15 +252,20 @@ export default function Home() {
       {resumeUploaded && matchProfile && (
         <div className="mb-4 rounded-lg bg-amber-950/40 border border-amber-800/50 px-4 py-3 space-y-1">
           <p className="text-sm text-[var(--foreground)]">
-            Showing <b>{matchProfile.role_family}</b> roles near{" "}
-            <b>{matchProfile.seniority}</b> level, ranked by fit.
+            Showing top 20 matches for <b>{matchProfile.title || matchProfile.role_family}</b>{" "}
+            ({matchProfile.role_family}, {matchProfile.seniority}) ranked by semantic fit.
           </p>
+          {matchProfile.skills?.length > 0 && (
+            <p className="text-xs text-[var(--foreground-muted)]">
+              Skills: {matchProfile.skills.slice(0, 6).join(", ")}
+              {matchProfile.skills.length > 6 ? "…" : ""}
+            </p>
+          )}
           {matchProfile.debug && (
             <p className="text-xs text-[var(--foreground-muted)] font-mono">
-              Debug: {matchProfile.debug.yearsExperience} yrs exp · full-time role:{" "}
-              {matchProfile.debug.hasFullTimeRole ? "yes" : "no"} · recent:{" "}
-              {matchProfile.debug.mostRecentRole || "—"} · seniority:{" "}
-              {matchProfile.debug.inferredSeniority}
+              Debug: {matchProfile.debug.yearsExperience} yrs · {matchProfile.debug.model}{" "}
+              · {matchProfile.debug.summary?.slice(0, 100)}
+              {(matchProfile.debug.summary?.length ?? 0) > 100 ? "…" : ""}
             </p>
           )}
           <button
