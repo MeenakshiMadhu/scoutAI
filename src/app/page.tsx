@@ -5,7 +5,7 @@ import JobDetail from "@/components/JobDetail";
 import MultiSelect from "@/components/MultiSelect";
 import SingleSelect from "@/components/SingleSelect";
 import ResumeUpload from "@/components/ResumeUpload";
-import { FAMILIES, LOCATION_TYPES, EMPLOYMENT_TYPES, Job } from "@/lib/store";
+import { FAMILIES, LOCATION_TYPES, EMPLOYMENT_TYPES, SENIORITY_ORDER, Job } from "@/lib/store";
 
 export default function Home() {
   const [jobs, setJobs] = useState<any[]>([]);
@@ -24,6 +24,8 @@ export default function Home() {
   const [family, setFamily] = useState<string[]>([]);
   const [locType, setLocType] = useState<string[]>([]);
   const [emp, setEmp] = useState<string[]>([]);
+  const [seniority, setSeniority] = useState<string[]>([]);
+  const [recentWeek, setRecentWeek] = useState(false);
   const [sort, setSort] = useState("newest");
 
   const [matchSession, setMatchSession] = useState<{
@@ -66,7 +68,7 @@ export default function Home() {
   useEffect(() => {
     setPage(0);
     setSelected(null);
-  }, [q, loc, family, locType, emp, sort]);
+  }, [q, loc, family, locType, emp, seniority, recentWeek, sort]);
 
   // fetch browse jobs — skip when showing resume-matched results
   useEffect(() => {
@@ -79,6 +81,8 @@ export default function Home() {
       if (family.length) params.set("family", family.join(","));
       if (locType.length) params.set("location_type", locType.join(","));
       if (emp.length) params.set("employment_type", emp.join(","));
+      if (seniority.length) params.set("seniority", seniority.join(","));
+      if (recentWeek) params.set("posted_within", "7");
       params.set("sort", sort);
       params.set("page", String(page));
       const d = await fetch(`/api/jobs?${params}`).then((r) => r.json());
@@ -88,7 +92,7 @@ export default function Home() {
       setLoading(false);
     }, 250);
     return () => clearTimeout(t);
-  }, [q, loc, family.join(","), locType.join(","), emp.join(","), sort, page, resumeUploaded]);
+  }, [q, loc, family.join(","), locType.join(","), emp.join(","), seniority.join(","), recentWeek, sort, page, resumeUploaded]);
 
   // fetch matched jobs when paginating after resume upload
   useEffect(() => {
@@ -116,7 +120,12 @@ export default function Home() {
     };
   }, [page, resumeUploaded, matchSession]);
 
-  const hasFilters = family.length || locType.length || emp.length;
+  const hasFilters =
+    family.length > 0 ||
+    locType.length > 0 ||
+    emp.length > 0 ||
+    seniority.length > 0 ||
+    recentWeek;
 
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 lg:py-10">
@@ -159,8 +168,8 @@ export default function Home() {
 
       {/* Filters */}
       <section className="relative z-30 glass-panel rounded-2xl p-4 sm:p-5 mb-6 animate-fade-in stagger-1 overflow-visible">
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-wrap gap-3 justify-center w-full">
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap gap-3 w-full">
             <div className="relative flex-[2] min-w-[220px]">
               <svg
                 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--foreground-muted)] pointer-events-none"
@@ -182,7 +191,7 @@ export default function Home() {
                 className="filter-input w-full rounded-xl pl-9 pr-3 py-2.5 text-sm"
               />
             </div>
-            <div className="relative flex-[1] min-w-[160px]">
+            <div className="relative flex-1 min-w-[160px]">
               <svg
                 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--foreground-muted)] pointer-events-none"
                 fill="none"
@@ -210,12 +219,18 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2.5 justify-center items-center">
+          <div className="flex flex-wrap items-center gap-2 w-full">
             <MultiSelect
               label="Business Area"
               options={FAMILIES}
               selected={family}
               onChange={setFamily}
+            />
+            <MultiSelect
+              label="Seniority"
+              options={SENIORITY_ORDER}
+              selected={seniority}
+              onChange={setSeniority}
             />
             <MultiSelect
               label="Location Type"
@@ -229,32 +244,45 @@ export default function Home() {
               selected={emp}
               onChange={setEmp}
             />
-
-            <SingleSelect
-              label="Sort by"
-              value={sort}
-              onChange={setSort}
-              options={[
-                { value: "newest", label: "Newest" },
-                { value: "oldest", label: "Oldest" },
-                { value: "pay_high", label: "Pay: high → low" },
-                { value: "pay_low", label: "Pay: low → high" },
-                { value: "title", label: "Title A–Z" },
-              ]}
-            />
-
-            {hasFilters > 0 && (
+            <button
+              type="button"
+              onClick={() => setRecentWeek((v) => !v)}
+              className={`filter-input rounded-xl px-3 py-2.5 text-sm cursor-pointer
+                ${recentWeek ? "border-amber-500/50 text-amber-200" : ""}`}
+            >
+              Last 7 days
+            </button>
+            {hasFilters && (
               <button
                 onClick={() => {
                   setFamily([]);
+                  setSeniority([]);
                   setLocType([]);
                   setEmp([]);
+                  setRecentWeek(false);
                 }}
-                className="text-sm px-3 py-2 rounded-xl btn-ghost underline underline-offset-2"
+                className="text-xs text-[var(--foreground-muted)] hover:text-[var(--foreground)] px-2 py-2 underline underline-offset-2"
               >
                 Clear filters
               </button>
             )}
+            <div className="flex items-center gap-2 ml-auto shrink-0">
+              <span className="hidden sm:inline text-xs text-[var(--foreground-muted)]">
+                Sort
+              </span>
+              <SingleSelect
+                label="Sort by"
+                value={sort}
+                onChange={setSort}
+                options={[
+                  { value: "newest", label: "Newest" },
+                  { value: "oldest", label: "Oldest" },
+                  { value: "pay_high", label: "Pay: high → low" },
+                  { value: "pay_low", label: "Pay: low → high" },
+                  { value: "title", label: "Title A–Z" },
+                ]}
+              />
+            </div>
           </div>
         </div>
       </section>

@@ -12,7 +12,9 @@ export async function GET(req: NextRequest) {
   const families = p.get("family")?.split(",").filter(Boolean) ?? [];
   const locTypes = p.get("location_type")?.split(",").filter(Boolean) ?? [];
   const emps = p.get("employment_type")?.split(",").filter(Boolean) ?? [];
+  const seniorities = p.get("seniority")?.split(",").filter(Boolean) ?? [];
   const loc = p.get("loc")?.toLowerCase().trim();
+  const postedWithinDays = parseInt(p.get("posted_within") ?? "", 10);
 
   if (families.length)
     results = results.filter((j) => families.includes(j.role_family));
@@ -20,6 +22,14 @@ export async function GET(req: NextRequest) {
     results = results.filter((j) => locTypes.includes(j.location_type));
   if (emps.length)
     results = results.filter((j) => emps.includes(j.employment_type));
+  if (seniorities.length)
+    results = results.filter((j) => seniorities.includes(j.seniority));
+  if (postedWithinDays > 0) {
+    const cutoff = new Date();
+    cutoff.setHours(0, 0, 0, 0);
+    cutoff.setDate(cutoff.getDate() - postedWithinDays);
+    results = results.filter((j) => new Date(j.date_posted) >= cutoff);
+  }
   if (loc)
     results = results.filter((j) => j.location.toLowerCase().includes(loc));
 
