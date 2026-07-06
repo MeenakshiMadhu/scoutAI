@@ -7,6 +7,11 @@ import {
   matchPercentColor,
 } from "@/lib/matchScore";
 import type { InsightProfile, SkillKeyword } from "@/lib/matchInsights";
+import {
+  getCachedInsights,
+  insightsCacheKey,
+  setCachedInsights,
+} from "@/lib/insightsCache";
 
 export type MatchProfile = InsightProfile;
 
@@ -34,6 +39,16 @@ export default function JobDetail({
     if (!resumeUploaded || !job || !matchProfile) {
       setInsights(null);
       setInsightsError("");
+      setInsightsLoading(false);
+      return;
+    }
+
+    const cacheKey = insightsCacheKey(job.id, matchProfile);
+    const cached = getCachedInsights(cacheKey);
+    if (cached) {
+      setInsights(cached);
+      setInsightsError("");
+      setInsightsLoading(false);
       return;
     }
 
@@ -54,10 +69,12 @@ export default function JobDetail({
           setInsightsError(data.error);
           return;
         }
-        setInsights({
+        const result = {
           insights: data.insights ?? [],
           skillKeywords: data.skillKeywords ?? [],
-        });
+        };
+        setCachedInsights(cacheKey, result);
+        setInsights(result);
       })
       .catch(() => {
         if (!cancelled) setInsightsError("Couldn't load match insights");

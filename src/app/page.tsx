@@ -7,6 +7,7 @@ import SingleSelect from "@/components/SingleSelect";
 import ResumeUpload from "@/components/ResumeUpload";
 import MatchLoadingPanel from "@/components/MatchLoadingPanel";
 import { BROWSE_PAGE_SIZE, queryRankedJobs } from "@/lib/jobBrowse";
+import { clearInsightsCache } from "@/lib/insightsCache";
 import {
   FAMILIES,
   LOCATION_TYPES,
@@ -50,6 +51,7 @@ export default function Home() {
   const [matchedPool, setMatchedPool] = useState<MatchedJob[]>([]);
 
   function clearMatchMode() {
+    clearInsightsCache();
     setIsUploading(false);
     setResumeUploaded(false);
     setMatchProfile(null);
@@ -62,6 +64,7 @@ export default function Home() {
 
   //   FUNCTION to Handle Resume Upload
   async function handleResume(file: File) {
+    clearInsightsCache();
     setSelected(null);
     setUploadError("");
     setIsUploading(true);
