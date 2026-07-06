@@ -36,7 +36,7 @@ export default function ResumeUpload({
   }
 
   return (
-    <section className="relative mb-8 overflow-hidden rounded-2xl glass-panel animate-fade-in stagger-1">
+    <section className="relative mb-8 w-full overflow-hidden rounded-2xl glass-panel animate-fade-in stagger-1">
       {/* gradient accent strip */}
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-600/60 to-transparent" />
 

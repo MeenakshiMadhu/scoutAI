@@ -224,9 +224,9 @@ export default function Home() {
     recentWeek;
 
   return (
-    <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 lg:py-10">
+    <main className="w-full max-w-7xl mx-auto self-stretch px-4 sm:px-6 py-8 lg:py-10">
       {/* Header */}
-      <header className="mb-8 animate-fade-in">
+      <header className="mb-8 w-full animate-fade-in">
         <div className="flex items-center gap-3 mb-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-amber-800 to-amber-600 shadow-lg shadow-amber-950/40">
             <svg
@@ -263,7 +263,7 @@ export default function Home() {
       )}
 
       {/* Filters */}
-      <section className="relative z-30 glass-panel rounded-2xl p-4 sm:p-5 mb-6 animate-fade-in stagger-1 overflow-visible">
+      <section className="relative z-30 w-full glass-panel rounded-2xl p-4 sm:p-5 mb-6 animate-fade-in stagger-1 overflow-visible">
         <div className="flex flex-col gap-3">
           <div className="flex flex-wrap gap-3 w-full">
             <div className="relative flex-[2] min-w-[220px]">
@@ -412,7 +412,7 @@ export default function Home() {
       </section>
 
       {resumeUploaded && matchProfile && (
-        <div className="mb-4 rounded-lg bg-amber-950/40 border border-amber-800/50 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+        <div className="mb-4 w-full rounded-lg bg-amber-950/40 border border-amber-800/50 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-[var(--foreground)]">
             Top 20 matches for your profile - add more filters to refine this
             list!
@@ -427,7 +427,7 @@ export default function Home() {
       )}
 
       {/* Result count */}
-      <div className="flex items-center justify-between mb-5 animate-fade-in stagger-2">
+      <div className="flex w-full items-center justify-between mb-5 animate-fade-in stagger-2">
         <p className="text-sm font-medium text-[var(--foreground-muted)]">
           {loading ? (
             <span className="inline-flex items-center gap-2 animate-pulse-soft">
@@ -454,10 +454,12 @@ export default function Home() {
       </div>
 
       {/* Split layout */}
-      <div className="flex gap-5 animate-fade-in stagger-3 relative z-0">
-        <div className={selected ? "w-full lg:w-1/2" : "w-full"}>
+      <div className="flex w-full min-w-0 gap-5 animate-fade-in stagger-3 relative z-0">
+        <div
+          className={`min-w-0 ${selected ? "w-full lg:w-1/2" : "w-full"}`}
+        >
           <div
-            className={`grid gap-4 ${
+            className={`grid w-full gap-4 ${
               selected ? "grid-cols-1" : "md:grid-cols-2 lg:grid-cols-3"
             }`}
           >
@@ -465,42 +467,42 @@ export default function Home() {
               ? Array.from({ length: selected ? 3 : 6 }).map((_, i) => (
                   <JobCardSkeleton key={i} />
                 ))
-              : jobs.map((j) => (
-                  <button
-                    key={j.id}
-                    onClick={() => setSelected(j)}
-                    className="text-left"
-                  >
-                    <JobCard job={j} selected={selected?.id === j.id} />
-                  </button>
-                ))}
+              : jobs.length > 0
+                ? jobs.map((j) => (
+                    <button
+                      key={j.id}
+                      onClick={() => setSelected(j)}
+                      className="text-left"
+                    >
+                      <JobCard job={j} selected={selected?.id === j.id} />
+                    </button>
+                  ))
+                : (
+                    <div className="col-span-full flex flex-col items-center justify-center py-20 text-center">
+                      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl glass-panel-light">
+                        <svg
+                          className="h-8 w-8 text-[var(--foreground-muted)]"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={1.5}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                      </div>
+                      <p className="text-base font-medium text-[var(--foreground)]">
+                        No roles match those filters
+                      </p>
+                      <p className="mt-1 text-sm text-[var(--foreground-muted)]">
+                        Try broadening your search or clearing filters
+                      </p>
+                    </div>
+                  )}
           </div>
-
-          {!loading && jobs.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl glass-panel-light">
-                <svg
-                  className="h-8 w-8 text-[var(--foreground-muted)]"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={1.5}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              </div>
-              <p className="text-base font-medium text-[var(--foreground)]">
-                No roles match those filters
-              </p>
-              <p className="mt-1 text-sm text-[var(--foreground-muted)]">
-                Try broadening your search or clearing filters
-              </p>
-            </div>
-          )}
 
           {!loading && totalPages > 1 && (
             <div className="flex items-center justify-center gap-3 mt-10">
