@@ -33,6 +33,7 @@ export type Job = {
   skills: string[];
   description: string;
   embedding: number[];
+  embedding_model?: string;
 };
 
 export const JOBS = jobs as Job[];
