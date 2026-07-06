@@ -55,7 +55,7 @@ export default function Home() {
       return;
     }
 
-    setMatchProfile({ ...up.profile, debug: up.debug });
+    setMatchProfile(up.profile);
     setMatchSession({ profile: up.profile, embedding: up.embedding });
     setPage(0);
     setResumeUploaded(true);
@@ -260,27 +260,13 @@ export default function Home() {
       </section>
 
       {resumeUploaded && matchProfile && (
-        <div className="mb-4 rounded-lg bg-amber-950/40 border border-amber-800/50 px-4 py-3 space-y-1">
+        <div className="mb-4 rounded-lg bg-amber-950/40 border border-amber-800/50 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-[var(--foreground)]">
-            Showing top 20 matches for <b>{matchProfile.title || matchProfile.role_family}</b>{" "}
-            ({matchProfile.role_family}, {matchProfile.seniority}) ranked by semantic fit.
+            Top 20 jobs matched for your profile
           </p>
-          {matchProfile.skills?.length > 0 && (
-            <p className="text-xs text-[var(--foreground-muted)]">
-              Skills: {matchProfile.skills.slice(0, 6).join(", ")}
-              {matchProfile.skills.length > 6 ? "…" : ""}
-            </p>
-          )}
-          {matchProfile.debug && (
-            <p className="text-xs text-[var(--foreground-muted)] font-mono">
-              Debug: {matchProfile.debug.yearsExperience} yrs · {matchProfile.debug.model}{" "}
-              · {matchProfile.debug.summary?.slice(0, 100)}
-              {(matchProfile.debug.summary?.length ?? 0) > 100 ? "…" : ""}
-            </p>
-          )}
           <button
             onClick={clearMatchMode}
-            className="text-sm text-amber-300 hover:text-amber-200 underline"
+            className="text-sm text-amber-300 hover:text-amber-200 underline shrink-0"
           >
             Clear · browse all
           </button>
