@@ -6,19 +6,13 @@ import {
   matchPercentBg,
   matchPercentColor,
 } from "@/lib/matchScore";
+import type { InsightProfile, SkillKeyword } from "@/lib/matchInsights";
 
-export type MatchProfile = {
-  title?: string;
-  role_family: string;
-  seniority: string;
-  skills: string[];
-  years_experience?: number;
-  summary?: string;
-};
+export type MatchProfile = InsightProfile;
 
 type InsightsCache = {
   insights: string[];
-  matchingSkills: string[];
+  skillKeywords: SkillKeyword[];
 };
 
 export default function JobDetail({
@@ -62,7 +56,7 @@ export default function JobDetail({
         }
         setInsights({
           insights: data.insights ?? [],
-          matchingSkills: data.matchingSkills ?? [],
+          skillKeywords: data.skillKeywords ?? [],
         });
       })
       .catch(() => {
@@ -104,9 +98,6 @@ export default function JobDetail({
 
   const lines = job.description.split("\n").filter(Boolean);
   const percent = matchPercent ?? 0;
-  const highlightSkills = new Set(
-    (insights?.matchingSkills ?? []).map((s) => s.toLowerCase())
-  );
 
   return (
     <div className="detail-scroll h-full overflow-y-auto bg-[var(--card)]">
@@ -145,13 +136,13 @@ export default function JobDetail({
         {resumeUploaded && matchProfile && (
           <div className="mb-6 space-y-4">
             <section
-              className={`overflow-hidden rounded-xl border bg-gradient-to-br p-4 ${matchPercentBg(percent)}`}
+              className={`overflow-hidden rounded-xl border bg-gradient-to-br px-3.5 py-3 ${matchPercentBg(percent)}`}
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/70">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-white/70">
                     <svg
-                      className="h-4 w-4 text-emerald-600"
+                      className="h-3.5 w-3.5 text-emerald-600"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -164,35 +155,47 @@ export default function JobDetail({
                       />
                     </svg>
                   </div>
-                  <span className="text-sm font-semibold text-gray-800">
-                    Match score
-                  </span>
+                  <div className="min-w-0">
+                    <span className="text-xs font-semibold text-gray-800">
+                      Match score
+                    </span>
+                    <p className="text-[10px] leading-tight text-gray-600/75 truncate">
+                      Based on your resume & this role
+                    </p>
+                  </div>
                 </div>
                 <span
-                  className={`text-2xl font-bold tabular-nums ${matchPercentColor(percent)}`}
+                  className={`shrink-0 text-lg font-bold tabular-nums ${matchPercentColor(percent)}`}
                 >
                   {matchPercent != null ? `${percent}%` : "—"}
                 </span>
               </div>
-              <p className="mt-2 text-xs text-gray-600/80">
-                Based on your resume profile and this role&apos;s requirements.
-              </p>
             </section>
 
             <section className="rounded-xl border border-gray-200 bg-white p-4">
               <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
                 Top skills & keywords
               </h3>
-              <div className="flex flex-wrap gap-1.5">
-                {job.skills.slice(0, 8).map((s) => {
-                  const matched = highlightSkills.has(s.toLowerCase());
-                  return (
+              {insightsLoading && (
+                <div className="flex flex-wrap gap-1.5">
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="skeleton h-6 rounded-lg"
+                      style={{ width: `${56 + (i % 3) * 20}px` }}
+                    />
+                  ))}
+                </div>
+              )}
+              {!insightsLoading && insights && (
+                <div className="flex flex-wrap gap-1.5">
+                  {insights.skillKeywords.map(({ term, matched }) => (
                     <span
-                      key={s}
+                      key={term}
                       className={`rounded-lg px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${
                         matched
                           ? "bg-emerald-50 text-emerald-800 ring-emerald-200"
-                          : "bg-amber-50 text-amber-900 ring-amber-100"
+                          : "bg-gray-50 text-gray-600 ring-gray-200"
                       }`}
                     >
                       {matched && (
@@ -200,11 +203,11 @@ export default function JobDetail({
                           ✓
                         </span>
                       )}
-                      {s}
+                      {term}
                     </span>
-                  );
-                })}
-              </div>
+                  ))}
+                </div>
+              )}
             </section>
 
             <section className="rounded-xl border border-gray-200 bg-white p-4">

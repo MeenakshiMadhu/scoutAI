@@ -60,7 +60,8 @@ function resumeJsonSchema() {
       skills: {
         type: "array" as const,
         items: { type: "string" as const },
-        description: "Up to 12 relevant skills explicitly mentioned in the resume",
+        description:
+          "All technical skills from the resume: skills section (including every subcategory), tools in projects, and technologies in experience bullets; up to 30",
       },
       summary: {
         type: "string" as const,
@@ -94,7 +95,7 @@ Rules:
 - years_experience: prefer explicit verbal claims ("10+ years", "+10 years' experience", "4 years of experience"). Otherwise estimate from full-time employment dates only; exclude internships, co-ops, and education periods.
 - role_family: choose the single closest value from the allowed enum.
 - seniority: infer from job titles and years (Intern / Junior / Mid / Senior / Lead / Director / VP).
-- skills: extract skills actually listed or clearly implied by tools/technologies mentioned; max 12.
+- skills: extract ALL skills from the Technical Skills / Skills section (every subcategory, e.g. Cloud & DevOps, Backend, etc.), plus key tools in projects and experience; list each tool separately (e.g. AWS, Azure, GCP, Docker, Kubernetes, not grouped); up to 30 items.
 - embed_text: one dense paragraph matching the job corpus format for vector search:
   "{title}. Field: {role_family}. Seniority: {seniority}. Skills: {comma-separated skills}. {summary plus notable experience}"
   Keep embed_text under 700 characters.`;
@@ -153,7 +154,7 @@ export async function buildResumeProfile(rawText: string): Promise<{
       role_family: parsed.role_family,
       seniority: parsed.seniority,
       title: parsed.title,
-      skills: parsed.skills.slice(0, 12),
+      skills: parsed.skills.slice(0, 30),
       years_experience: parsed.years_experience,
     },
     embedding,
