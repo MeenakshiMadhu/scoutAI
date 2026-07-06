@@ -49,6 +49,8 @@
 
 - Added LLM (OpenAI API) for resume text parsing. This fixed issues with messy and varied resume formats in matching jobs.
 - Improved matching logic to hybrid: Hard filter on years of experience with +/-1 year buffer + Cosine similarity
+- Limited AI resume matching results to Top 20 roles.
 - Tested with resumes from different tiers and fields.
 - Major change: Changed embedding model from MiniLM to OpenAI `text-embedding-3-small`.
   - Reason: MiniLM ran locally in development, but ONNX's native runtime isn't available on Vercel's serverless functions, so the deployed version uses OpenAI embeddings for both jobs and resumes to keep a single, consistent vector space with zero extra infrastructure.
+- Fixed detailed view closing bug

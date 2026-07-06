@@ -31,8 +31,17 @@ export default function Home() {
     embedding: number[];
   } | null>(null);
 
+  function clearMatchMode() {
+    setResumeUploaded(false);
+    setMatchProfile(null);
+    setMatchSession(null);
+    setPage(0);
+    setSelected(null);
+  }
+
   //   FUNCTION to Handle Resume Upload
   async function handleResume(file: File) {
+    setSelected(null);
     setUploadError("");
     setLoading(true);
     const fd = new FormData();
@@ -53,9 +62,10 @@ export default function Home() {
     setLoading(false);
   }
 
-  // reset page to 0 whenever filters change
+  // reset page and close detail when filters or sort change
   useEffect(() => {
     setPage(0);
+    setSelected(null);
   }, [q, loc, family, locType, emp, sort]);
 
   // fetch browse jobs — skip when showing resume-matched results
@@ -142,7 +152,7 @@ export default function Home() {
       </header>
 
       {/* Resume Upload */}
-      <ResumeUpload onFileSelected={handleResume} />
+      <ResumeUpload onFileSelected={handleResume} onClear={clearMatchMode} />
       {uploadError && (
         <p className="text-red-500 text-sm mb-4">{uploadError}</p>
       )}
@@ -269,12 +279,7 @@ export default function Home() {
             </p>
           )}
           <button
-            onClick={() => {
-              setResumeUploaded(false);
-              setMatchProfile(null);
-              setMatchSession(null);
-              setPage(0);
-            }}
+            onClick={clearMatchMode}
             className="text-sm text-amber-300 hover:text-amber-200 underline"
           >
             Clear · browse all

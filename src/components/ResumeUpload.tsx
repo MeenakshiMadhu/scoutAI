@@ -3,8 +3,10 @@ import { useState, useRef } from "react";
 
 export default function ResumeUpload({
   onFileSelected,
+  onClear,
 }: {
   onFileSelected?: (file: File) => void;
+  onClear?: () => void;
 }) {
   const [fileName, setFileName] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -30,6 +32,7 @@ export default function ResumeUpload({
     setFileName(null);
     setError("");
     if (inputRef.current) inputRef.current.value = "";
+    onClear?.();
   }
 
   return (
