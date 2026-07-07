@@ -1,0 +1,36 @@
+flowchart TB
+  subgraph UPLOAD["1 · Resume upload"]
+    direction LR
+    R1["PDF"] --> R2["pdfreader"] --> R3["gpt-4o-mini\nprofile"] --> R4["embed resume"] --> R5["profile + vector"]
+  end
+
+  subgraph MATCH["2 · Match top 20"]
+    direction LR
+    M1["YOE filter"] --> M2["Seniority filter"] --> M3["Cosine similarity"] --> M4["Top 20 + match %"]
+  end
+
+  subgraph REFINE["3 · Refine in browser"]
+    direction LR
+    F1["Filter & sort"] --> F2["Paginate results"]
+  end
+
+  subgraph DETAIL["4 · Job detail"]
+    direction TB
+    D1["Open role"]
+    D2{"Cached?"}
+    D3["Show insights"]
+    D4["POST /api/insights"]
+    D5["LLM + skill verify"]
+    D1 --> D2
+    D2 -->|yes| D3
+    D2 -->|no| D4 --> D5 --> D3
+  end
+
+  R5 --> M1
+  M4 --> F1
+  F2 --> D1
+
+  classDef step fill:#fafafa,stroke:#182335
+  classDef ai fill:#e15546,color:#fff,stroke:#182335
+  class R3,D4,D5 ai
+  class R1,R2,R4,R5,M1,M2,M3,M4,F1,F2,D1,D2,D3 step

@@ -1,0 +1,21 @@
+flowchart TB
+  subgraph SETUP["One-time setup"]
+    direction LR
+    S1["generate_jobs.py"] --> S2["jobs.json"] --> S3["embed.ts"] --> S4["jobs-embedded.json"]
+  end
+
+  subgraph BROWSE["Browse all jobs"]
+    direction TB
+    U1["User sets filters & search"]
+    U2["GET /api/jobs"]
+    U3["Filter · sort · paginate"]
+    U4["Job cards"]
+    U1 --> U2 --> U3 --> U4
+  end
+
+  S4 -.->|loads at startup| U2
+
+  classDef setup fill:#f5f5f4,stroke:#78716c,stroke-dasharray:4
+  classDef browse fill:#fafafa,stroke:#182335
+  class S1,S2,S3,S4 setup
+  class U1,U2,U3,U4 browse
