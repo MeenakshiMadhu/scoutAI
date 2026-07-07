@@ -50,6 +50,16 @@ export default function Home() {
   } | null>(null);
   const [matchedPool, setMatchedPool] = useState<MatchedJob[]>([]);
 
+  function clearBrowseFilters() {
+    setQ("");
+    setLoc("");
+    setFamily([]);
+    setLocType([]);
+    setEmp([]);
+    setSeniority([]);
+    setRecentWeek(false);
+  }
+
   function clearMatchMode() {
     clearInsightsCache();
     setIsUploading(false);
@@ -65,6 +75,7 @@ export default function Home() {
   //   FUNCTION to Handle Resume Upload
   async function handleResume(file: File) {
     clearInsightsCache();
+    clearBrowseFilters();
     setSelected(null);
     setUploadError("");
     setIsUploading(true);
