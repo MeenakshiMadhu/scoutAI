@@ -2,9 +2,7 @@
 import { useEffect, useState } from "react";
 import { Job } from "@/lib/store";
 import ShareMenu from "@/components/ShareMenu";
-import {
-  matchPercentColor,
-} from "@/lib/matchScore";
+import { matchPercentColor } from "@/lib/matchScore";
 import type { InsightProfile, SkillKeyword } from "@/lib/matchInsights";
 import {
   getCachedInsights,
@@ -131,16 +129,19 @@ export default function JobDetail({
         </div>
 
         <div className="mt-4 flex flex-wrap gap-1.5">
-          {[job.location, job.location_type, job.employment_type, job.seniority].map(
-            (m, i) => (
-              <span
-                key={i}
-                className="rounded-full bg-white/80 px-2.5 py-0.5 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-200/80"
-              >
-                {m}
-              </span>
-            )
-          )}
+          {[
+            job.location,
+            job.location_type,
+            job.employment_type,
+            job.seniority,
+          ].map((m, i) => (
+            <span
+              key={i}
+              className="rounded-full bg-white/80 px-2.5 py-0.5 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-200/80"
+            >
+              {m}
+            </span>
+          ))}
         </div>
 
         <p className="mt-3 text-lg font-bold text-gray-900">
@@ -170,7 +171,7 @@ export default function JobDetail({
             </svg>
           </button>
           <p className="mt-1.5 text-center text-[10px] text-gray-400">
-            External apply link — coming soon
+            External apply link - coming soon
           </p>
         </section>
 
@@ -186,7 +187,9 @@ export default function JobDetail({
                     Match
                   </span>
                   <span
-                    className={`text-xl font-bold tabular-nums ${matchPercentColor(percent)}`}
+                    className={`text-xl font-bold tabular-nums ${matchPercentColor(
+                      percent
+                    )}`}
                   >
                     {matchPercent != null ? `${percent}%` : "—"}
                   </span>
@@ -320,7 +323,7 @@ export default function JobDetail({
           </div>
         </section>
 
-        <section className="mt-6 border-t border-gray-100 pt-5">
+        <section className="mt-6 border-t border-gray-100 pt-5 pb-16">
           <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
             Required skills
           </h3>
