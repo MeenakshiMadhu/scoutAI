@@ -1,5 +1,5 @@
 """
-Synthetic job posting generator for `align`.
+Synthetic job posting generator for scoutAI.
 Produces 1500 realistic postings across very different fields.
 
 Each posting includes:

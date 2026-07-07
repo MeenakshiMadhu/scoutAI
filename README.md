@@ -28,15 +28,15 @@ High-level components and how they connect (Frontend → API routes → server l
 
 ![Architecture diagram](docs/scoutAI-architecture.png)
 
-| Layer | Components |
-| ----- | ---------- |
-| **Frontend · Next.js** | Job Search & Browse, Resume Upload, Job Detail & Insights |
-| **API Routes · Vercel** | `GET /api/jobs`, `POST /api/upload`, `POST /api/match`, `POST /api/insights` |
-| **Server Logic · src/lib** | Browse & filter, PDF extract + profile, hard filters + cosine top 20, match insights + skills |
-| **AI · OpenAI** | `text-embedding-3-small` (job + resume vectors), `gpt-4o-mini` (parse + insights) |
-| **Data Store · Neon PostgreSQL** | `pgvector` jobs table (~1,500 rows); offline ingest via `generate_jobs.py` → `embed.ts` |
+| Layer                            | Components                                                                                    |
+| -------------------------------- | --------------------------------------------------------------------------------------------- |
+| **Frontend · Next.js**           | Job Search & Browse, Resume Upload, Job Detail & Insights                                     |
+| **API Routes · Vercel**          | `GET /api/jobs`, `POST /api/upload`, `POST /api/match`, `POST /api/insights`                  |
+| **Server Logic · src/lib**       | Browse & filter, PDF extract + profile, hard filters + cosine top 20, match insights + skills |
+| **AI · OpenAI**                  | `text-embedding-3-small` (job + resume vectors), `gpt-4o-mini` (parse + insights)             |
+| **Data Store · Neon PostgreSQL** | `pgvector` jobs table (~1,500 rows); offline ingest via `generate_jobs.py` → `embed.ts`       |
 
-Editable source: [`docs/scoutAI-architecture.drawio`](docs/scoutAI-architecture.drawio) (open in [draw.io](https://app.diagrams.net/)).
+<!-- Editable source: [`docs/scoutAI-architecture.drawio`](docs/scoutAI-architecture.drawio) (open in [draw.io](https://app.diagrams.net/)). -->
 
 ---
 
@@ -46,85 +46,9 @@ Editable source: [`docs/scoutAI-architecture.drawio`](docs/scoutAI-architecture.
 
 ![Browse data flow](docs/data-flow-browse.png)
 
-<details>
-<summary>Mermaid source</summary>
-
-```mermaid
-flowchart TB
-  subgraph SETUP["One-time setup · local / CI"]
-    direction LR
-    S1["generate_jobs.py"] --> S2["jobs.json"] --> S3["embed.ts · OpenAI"] --> S4[("PostgreSQL + pgvector")]
-  end
-
-  subgraph BROWSE["Browse all jobs · runtime"]
-    direction TB
-    U1["User sets filters & search"]
-    U2["GET /api/jobs"]
-    U3["jobsDb.fetchJobsForBrowse()"]
-    U4["jobBrowse: filter · sort · paginate"]
-    U5["Job cards"]
-    U1 --> U2 --> U3 --> U4 --> U5
-  end
-
-  S4 -.->|query per request| U3
-```
-
-</details>
-
-Source: [`docs/data-flow-browse.mmd`](docs/data-flow-browse.mmd)
-
 ### Resume upload & match
 
 ![Resume match data flow](docs/data-flow-resume.png)
-
-<details>
-<summary>Mermaid source</summary>
-
-```mermaid
-flowchart TB
-  subgraph UPLOAD["1 · Resume upload"]
-    direction LR
-    R1["PDF"] --> R2["POST /api/upload"] --> R3["pdfreader + gpt-4o-mini"] --> R4["embed resume · OpenAI"] --> R5["profile + vector"]
-  end
-
-  subgraph MATCH["2 · Match top 20"]
-    direction TB
-    M1["POST /api/match"]
-    M2["Fetch jobs + embeddings\nfrom Postgres"]
-    M3["YOE · seniority · cosine"]
-    M4["Top 20 + match %"]
-    M1 --> M2 --> M3 --> M4
-  end
-
-  subgraph REFINE["3 · Refine in browser"]
-    direction LR
-    F1["Filter & sort"] --> F2["Paginate results"]
-  end
-
-  subgraph DETAIL["4 · Job detail"]
-    direction TB
-    D1["Open role"]
-    D2{"insightsCache?"}
-    D3["Show insights"]
-    D4["POST /api/insights"]
-    D5["Fetch job · LLM + skill verify"]
-    D1 --> D2
-    D2 -->|yes| D3
-    D2 -->|no| D4 --> D5 --> D3
-  end
-
-  DB[("PostgreSQL + pgvector")]
-
-  R5 --> M1
-  M2 -.-> DB
-  D5 -.-> DB
-  M4 --> F1
-  F2 --> D1
-```
-
-</details>
-
-Source: [`docs/data-flow-resume.mmd`](docs/data-flow-resume.mmd)
 
 ### API routes
 
@@ -139,23 +63,21 @@ Source: [`docs/data-flow-resume.mmd`](docs/data-flow-resume.mmd)
 
 ## User Interface
 
-_Add screenshots to `docs/` and uncomment the lines below._
-
 #### Landing page — browse jobs with search and filters
 
-<!-- ![Landing page](docs/landing.png) -->
+![Landing page](docs/landing.png)
 
 #### Resume upload and AI matching
 
-<!-- ![Resume upload](docs/resume-upload.png) -->
+![Resume upload](docs/resume_upload.png)
 
 #### Top 20 matches with match score and filters
 
-<!-- ![Match results](docs/match-results.png) -->
+![Match results](docs/top20.png)
 
 #### Job detail — skills, match %, AI insights
 
-<!-- ![Job detail](docs/job-detail.png) -->
+![Job detail](docs/job_detail_match.png)
 
 ---
 
@@ -171,7 +93,7 @@ scoutAI uses a **hybrid matcher**, not pure keyword search or pure LLM ranking.
 
 ---
 
-## LLM & Embeddings (not classic RAG)
+## LLM & Embeddings
 
 | Feature             | Model                    | Approach                                                                |
 | ------------------- | ------------------------ | ----------------------------------------------------------------------- |
@@ -179,7 +101,7 @@ scoutAI uses a **hybrid matcher**, not pure keyword search or pure LLM ranking.
 | Job/resume matching | `text-embedding-3-small` | Vector similarity over pre-embedded jobs                                |
 | Insights + keywords | `gpt-4o-mini`            | Full job description + profile in prompt; server verifies skill matches |
 
-This is **not RAG** in the retrieval sense for insights — the LLM receives the job and profile directly. Matching uses **precomputed embeddings** stored in PostgreSQL (pgvector); at ~1.5K jobs the API still applies YOE/seniority filters in app code then cosine-scores the survivor pool.
+For insights, the LLM receives the full job description and candidate profile directly in the prompt. Matching uses **precomputed embeddings** stored in PostgreSQL (pgvector); at ~1.5K jobs the API applies YOE/seniority filters in app code, then cosine-scores the survivor pool.
 
 ---
 

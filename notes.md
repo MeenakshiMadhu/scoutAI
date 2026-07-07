@@ -109,9 +109,9 @@ npm run embed:jobs    # re-embed from jobs.json into DB
 
 **Decisions / notes**
 
-- Insights: direct LLM (job + profile in prompt), not RAG — context is small and already known for one job.
+- Insights: direct LLM with job + profile in prompt - context is small and already known for one job.
 - Matching: vector similarity + hard filters; pgvector HNSW ready as catalog grows.
-- `jobsDb` / `db.ts` = app code that talks to the pgvector table; not a separate store.
+- `jobsDb` / `db.ts` = app code that talks to the pgvector table;
 
 ---
 
