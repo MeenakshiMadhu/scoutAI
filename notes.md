@@ -57,3 +57,80 @@
 - Added seniority filter, and filtering on Top 20 AI matched jobs.
 - Added AI job match insights and match score
 - updated UI
+
+## Monday, July 6 2026
+
+**UI / UX**
+
+- New color theme: navy `#182335`, coral `#E15546`, peach `#EEAF9D`, beige `#EAE4CC`; job cards stay white.
+- Job card hover: subtle shadow only (removed top accent line).
+- Center-aligned header and main layout; kept filter/search row left-aligned with sort on the right.
+- Added `MatchLoadingPanel` for upload, match, and browse loading states (rotating phrases).
+- Match score moved into top-right of “Top skills & keywords” box in detail panel.
+- Full-width coral “View job” button in detail panel only (placeholder — external apply coming soon).
+
+**Insights**
+
+- Wired `insightsCache.ts` into `JobDetail` — lazy cache per job + profile; cleared on new upload / clear match.
+- Deterministic JD keyword extraction + `skillMatchVerify` so LLM skill flags are grounded in resume text.
+
+**Docs / diagrams**
+
+- README updated.
+- Architecture diagram in draw.io (`docs/scoutAI-architecture.drawio`).
+- Data flow split into two diagrams: browse vs resume upload/match (`docs/data-flow-browse`, `docs/data-flow-resume`).
+- Updated data flow diagrams for Postgres (query per request, not load at startup).
+
+**Bugs**
+
+- Clear all filters and search when user uploads a resume (was incorrectly applying prior browse filters to top-20 pool).
+
+**Database — PostgreSQL + pgvector**
+
+- Replaced in-memory `jobs-embedded.json` at runtime with **Neon PostgreSQL + pgvector**.
+- Added:
+  - `db/schema.sql` — jobs table, filter indexes, HNSW vector index
+  - `src/lib/db.ts` — `@neondatabase/serverless` client
+  - `src/lib/jobsDb.ts` — fetch/upsert helpers
+  - `scripts/db-migrate.ts`, `scripts/db-seed.ts`
+- Updated `scripts/embed.ts` to upsert embedded jobs into Postgres (still reads `src/data/jobs.json`).
+- API routes (`/api/jobs`, `/api/match`, `/api/insights`) query DB instead of importing JSON.
+- Browse responses strip embeddings via `toPublicJob()`.
+- Env: `DATABASE_URL` required alongside `OPENAI_API_KEY`.
+
+**Setup commands**
+
+```bash
+npm run db:migrate    # apply schema
+npm run db:seed       # import existing jobs-embedded.json
+# or
+npm run embed:jobs    # re-embed from jobs.json into DB
+```
+
+**Decisions / notes**
+
+- Insights: direct LLM (job + profile in prompt), not RAG — context is small and already known for one job.
+- Matching: vector similarity + hard filters; pgvector HNSW ready as catalog grows.
+- `jobsDb` / `db.ts` = app code that talks to the pgvector table; not a separate store.
+
+---
+
+## Current stack (quick reference)
+
+| Piece          | Choice                                                              |
+| -------------- | ------------------------------------------------------------------- |
+| Frontend       | Next.js 16, React 19, Tailwind 4                                    |
+| Hosting        | Vercel                                                              |
+| Job store      | Neon PostgreSQL + pgvector (~1,500 jobs)                            |
+| Embeddings     | OpenAI `text-embedding-3-small`                                     |
+| LLM            | OpenAI `gpt-4o-mini` (resume parse, insights, skill keywords)       |
+| Match          | YOE + seniority hard filters → cosine → top 20 → client-side refine |
+| Insights cache | In-browser session (`insightsCache.ts`)                             |
+
+<!-- ## Todo / future
+
+- [ ] README screenshots (`docs/landing.png`, etc.)
+- [ ] External apply link on “View job”
+- [ ] Persistent insights cache (Redis/DB) for multi-instance serverless
+- [ ] Push more filter/sort into SQL as job count grows; use pgvector ANN for match at scale
+- [ ] Live job ingestion pipeline (replace synthetic data) -->
