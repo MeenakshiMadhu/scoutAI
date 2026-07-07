@@ -1,6 +1,6 @@
 # scoutAI
 
-scoutAI is an AI-powered career search platform that lets users browse ~1,500 synthetic job postings, filter and search them, and upload a PDF resume to unlock personalized top-20 matches with match scores, skill-keyword highlights, and LLM-generated fit insights.
+scoutAI is an AI-powered career search platform that lets users browse ~1,500 **synthetic** job postings, filter and search them, and upload a PDF resume to unlock personalized top-20 matches with match scores, skill-keyword highlights, and LLM-generated fit insights.
 
 Built as a full-stack **Next.js** app deployed on **Vercel**, with **OpenAI** for embeddings and LLM features, and **Neon PostgreSQL + pgvector** for job storage and vector search.
 
