@@ -1,12 +1,16 @@
 flowchart TB
   subgraph UPLOAD["1 · Resume upload"]
     direction LR
-    R1["PDF"] --> R2["pdfreader"] --> R3["gpt-4o-mini\nprofile"] --> R4["embed resume"] --> R5["profile + vector"]
+    R1["PDF"] --> R2["POST /api/upload"] --> R3["pdfreader + gpt-4o-mini"] --> R4["embed resume · OpenAI"] --> R5["profile + vector"]
   end
 
   subgraph MATCH["2 · Match top 20"]
-    direction LR
-    M1["YOE filter"] --> M2["Seniority filter"] --> M3["Cosine similarity"] --> M4["Top 20 + match %"]
+    direction TB
+    M1["POST /api/match"]
+    M2["Fetch jobs + embeddings\nfrom Postgres"]
+    M3["YOE · seniority · cosine"]
+    M4["Top 20 + match %"]
+    M1 --> M2 --> M3 --> M4
   end
 
   subgraph REFINE["3 · Refine in browser"]
@@ -17,20 +21,26 @@ flowchart TB
   subgraph DETAIL["4 · Job detail"]
     direction TB
     D1["Open role"]
-    D2{"Cached?"}
+    D2{"insightsCache?"}
     D3["Show insights"]
     D4["POST /api/insights"]
-    D5["LLM + skill verify"]
+    D5["Fetch job · LLM + skill verify"]
     D1 --> D2
     D2 -->|yes| D3
     D2 -->|no| D4 --> D5 --> D3
   end
 
+  DB[("PostgreSQL + pgvector")]
+
   R5 --> M1
+  M2 -.-> DB
+  D5 -.-> DB
   M4 --> F1
   F2 --> D1
 
   classDef step fill:#fafafa,stroke:#182335
   classDef ai fill:#e15546,color:#fff,stroke:#182335
-  class R3,D4,D5 ai
-  class R1,R2,R4,R5,M1,M2,M3,M4,F1,F2,D1,D2,D3 step
+  classDef db fill:#ffedd5,stroke:#f97316,stroke-width:2px,color:#7c2d12
+  class R3,R4,D5 ai
+  class R1,R2,R5,M1,M2,M3,M4,F1,F2,D1,D2,D3,D4 step
+  class DB db

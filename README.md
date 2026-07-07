@@ -2,102 +2,41 @@
 
 scoutAI is an AI-powered career search platform that lets users browse ~1,500 synthetic job postings, filter and search them, and upload a PDF resume to unlock personalized top-20 matches with match scores, skill-keyword highlights, and LLM-generated fit insights.
 
-Built as a full-stack **Next.js** app deployed on **Vercel**, with **OpenAI** for embeddings and structured LLM features — no separate database or vector service for the demo.
+Built as a full-stack **Next.js** app deployed on **Vercel**, with **OpenAI** for embeddings and LLM features, and **Neon PostgreSQL + pgvector** for job storage and vector search.
 
 ---
 
 ## Tech Stack
 
-| Layer              | Choice                                                                                 |
-| ------------------ | -------------------------------------------------------------------------------------- |
-| **Frontend**       | Next.js 16 (App Router), React 19, Tailwind CSS 4                                      |
-| **Backend**        | Next.js API routes (`src/app/api/`)                                                    |
-| **Hosting**        | Vercel (serverless)                                                                    |
+| Layer              | Choice                                                                               |
+| ------------------ | ------------------------------------------------------------------------------------ |
+| **Frontend**       | Next.js 16 (App Router), React 19, Tailwind CSS 4                                    |
+| **Backend**        | Next.js API routes (`src/app/api/`)                                                  |
+| **Hosting**        | Vercel (serverless)                                                                  |
 | **Job data**       | PostgreSQL + **pgvector** (Neon-compatible); ~1,500 jobs with precomputed embeddings |
-| **DB driver**      | `@neondatabase/serverless` (Vercel-friendly pooled Postgres)                       |
-| **Embeddings**     | OpenAI `text-embedding-3-small` (1536-dim, shared space for jobs + resumes)            |
-| **LLM**            | OpenAI `gpt-4o-mini` (resume parsing, match insights, skill keywords)                  |
-| **PDF parsing**    | `pdfreader`                                                                            |
-| **Insights cache** | In-memory session cache (`src/lib/insightsCache.ts`)                                   |
+| **DB driver**      | `@neondatabase/serverless` (Vercel-friendly pooled Postgres)                         |
+| **Embeddings**     | OpenAI `text-embedding-3-small` (1536-dim, shared space for jobs + resumes)          |
+| **LLM**            | OpenAI `gpt-4o-mini` (resume parsing, match insights, skill keywords)                |
+| **PDF parsing**    | `pdfreader`                                                                          |
+| **Insights cache** | In-memory session cache (`src/lib/insightsCache.ts`)                                 |
 
 ---
 
 ## Architecture
 
-![Architecture diagram](docs/architecture_diagram.png)
+High-level components and how they connect (Frontend → API routes → server logic → OpenAI / Neon Postgres).
 
-<details>
-<summary>Mermaid source</summary>
+![Architecture diagram](docs/scoutAI-architecture.png)
 
-```mermaid
-%%{init: {'flowchart': {'curve': 'linear'}}}%%
-flowchart TB
-  subgraph TOP[" "]
-    direction LR
-    subgraph FE["Frontend Layer · Next.js"]
-      direction LR
-      FE1["Job Search & Browse\npage.tsx · JobCard"]
-      FE2["Resume Upload\nResumeUpload.tsx"]
-      FE3["Job Detail & Insights\nJobDetail · insightsCache"]
-    end
+| Layer | Components |
+| ----- | ---------- |
+| **Frontend · Next.js** | Job Search & Browse, Resume Upload, Job Detail & Insights |
+| **API Routes · Vercel** | `GET /api/jobs`, `POST /api/upload`, `POST /api/match`, `POST /api/insights` |
+| **Server Logic · src/lib** | Browse & filter, PDF extract + profile, hard filters + cosine top 20, match insights + skills |
+| **AI · OpenAI** | `text-embedding-3-small` (job + resume vectors), `gpt-4o-mini` (parse + insights) |
+| **Data Store · Neon PostgreSQL** | `pgvector` jobs table (~1,500 rows); offline ingest via `generate_jobs.py` → `embed.ts` |
 
-    subgraph API["API Routes · Vercel"]
-      direction LR
-      API1["GET /api/jobs"]
-      API2["POST /api/upload"]
-      API3["POST /api/match"]
-      API4["POST /api/insights"]
-    end
-
-    subgraph SVC["Server Logic · src/lib"]
-      direction LR
-      S1["Browse & filter\njobBrowse · store"]
-      S2["PDF extract + profile\nllmResume · pdfreader"]
-      S3["YOE filter · cosine · top 20\nmatchFilters · matchScore"]
-      S4["Fit insights + skills\nmatchInsights · skillMatchVerify"]
-    end
-
-    subgraph AI["AI Services · OpenAI"]
-      direction LR
-      EMB["text-embedding-3-small\njob + resume vectors"]
-      LLM["gpt-4o-mini\nparse · insights"]
-    end
-  end
-
-  subgraph DS["Data Store"]
-    direction LR
-    GEN["generate_jobs.py"] --> RAW["jobs.json"] --> SCR["embed.ts"]
-    STORE[("PostgreSQL + pgvector\n~1,500 jobs")]
-  end
-
-  FE1 --> API1
-  FE1 --> API3
-  FE2 --> API2
-  FE3 --> API4
-
-  API1 --> S1
-  API2 --> S2
-  API3 --> S3
-  API4 --> S4
-
-  S1 --> STORE
-  S2 --> EMB
-  S2 --> LLM
-  S3 --> STORE
-  S4 --> LLM
-  S4 --> STORE
-
-  EMB -.->|embed offline| SCR
-  SCR -.->|load at startup| STORE
-
-  TOP ~~~ DS
-
-  style TOP fill:transparent,stroke:transparent
-```
-
-</details>
-
-Source: [`docs/architecture.mmd`](docs/architecture.mmd)
+Editable source: [`docs/scoutAI-architecture.drawio`](docs/scoutAI-architecture.drawio) (open in [draw.io](https://app.diagrams.net/)).
 
 ---
 
@@ -112,21 +51,22 @@ Source: [`docs/architecture.mmd`](docs/architecture.mmd)
 
 ```mermaid
 flowchart TB
-  subgraph SETUP["One-time setup"]
+  subgraph SETUP["One-time setup · local / CI"]
     direction LR
-    S1["generate_jobs.py"] --> S2["jobs.json"] --> S3["embed.ts"] --> S4["PostgreSQL"]
+    S1["generate_jobs.py"] --> S2["jobs.json"] --> S3["embed.ts · OpenAI"] --> S4[("PostgreSQL + pgvector")]
   end
 
-  subgraph BROWSE["Browse all jobs"]
+  subgraph BROWSE["Browse all jobs · runtime"]
     direction TB
     U1["User sets filters & search"]
     U2["GET /api/jobs"]
-    U3["Filter · sort · paginate"]
-    U4["Job cards"]
-    U1 --> U2 --> U3 --> U4
+    U3["jobsDb.fetchJobsForBrowse()"]
+    U4["jobBrowse: filter · sort · paginate"]
+    U5["Job cards"]
+    U1 --> U2 --> U3 --> U4 --> U5
   end
 
-  S4 -.->|loads at startup| U2
+  S4 -.->|query per request| U3
 ```
 
 </details>
@@ -144,12 +84,16 @@ Source: [`docs/data-flow-browse.mmd`](docs/data-flow-browse.mmd)
 flowchart TB
   subgraph UPLOAD["1 · Resume upload"]
     direction LR
-    R1["PDF"] --> R2["pdfreader"] --> R3["gpt-4o-mini\nprofile"] --> R4["embed resume"] --> R5["profile + vector"]
+    R1["PDF"] --> R2["POST /api/upload"] --> R3["pdfreader + gpt-4o-mini"] --> R4["embed resume · OpenAI"] --> R5["profile + vector"]
   end
 
   subgraph MATCH["2 · Match top 20"]
-    direction LR
-    M1["YOE filter"] --> M2["Seniority filter"] --> M3["Cosine similarity"] --> M4["Top 20 + match %"]
+    direction TB
+    M1["POST /api/match"]
+    M2["Fetch jobs + embeddings\nfrom Postgres"]
+    M3["YOE · seniority · cosine"]
+    M4["Top 20 + match %"]
+    M1 --> M2 --> M3 --> M4
   end
 
   subgraph REFINE["3 · Refine in browser"]
@@ -160,16 +104,20 @@ flowchart TB
   subgraph DETAIL["4 · Job detail"]
     direction TB
     D1["Open role"]
-    D2{"Cached?"}
+    D2{"insightsCache?"}
     D3["Show insights"]
     D4["POST /api/insights"]
-    D5["LLM + skill verify"]
+    D5["Fetch job · LLM + skill verify"]
     D1 --> D2
     D2 -->|yes| D3
     D2 -->|no| D4 --> D5 --> D3
   end
 
+  DB[("PostgreSQL + pgvector")]
+
   R5 --> M1
+  M2 -.-> DB
+  D5 -.-> DB
   M4 --> F1
   F2 --> D1
 ```

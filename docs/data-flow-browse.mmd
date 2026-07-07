@@ -1,21 +1,24 @@
 flowchart TB
-  subgraph SETUP["One-time setup"]
+  subgraph SETUP["One-time setup · local / CI"]
     direction LR
-    S1["generate_jobs.py"] --> S2["jobs.json"] --> S3["embed.ts"] --> S4["jobs-embedded.json"]
+    S1["generate_jobs.py"] --> S2["jobs.json"] --> S3["embed.ts · OpenAI"] --> S4[("PostgreSQL + pgvector")]
   end
 
-  subgraph BROWSE["Browse all jobs"]
+  subgraph BROWSE["Browse all jobs · runtime"]
     direction TB
     U1["User sets filters & search"]
     U2["GET /api/jobs"]
-    U3["Filter · sort · paginate"]
-    U4["Job cards"]
-    U1 --> U2 --> U3 --> U4
+    U3["jobsDb.fetchJobsForBrowse()"]
+    U4["jobBrowse: filter · sort · paginate"]
+    U5["Job cards"]
+    U1 --> U2 --> U3 --> U4 --> U5
   end
 
-  S4 -.->|loads at startup| U2
+  S4 -.->|query per request| U3
 
   classDef setup fill:#f5f5f4,stroke:#78716c,stroke-dasharray:4
   classDef browse fill:#fafafa,stroke:#182335
-  class S1,S2,S3,S4 setup
-  class U1,U2,U3,U4 browse
+  classDef db fill:#ffedd5,stroke:#f97316,stroke-width:2px,color:#7c2d12
+  class S1,S2,S3 setup
+  class U1,U2,U3,U4,U5 browse
+  class S4 db
