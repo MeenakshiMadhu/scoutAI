@@ -1,4 +1,4 @@
-import { Job } from "@/lib/store";
+import { Job } from "@/lib/jobTypes";
 
 export type BrowseFilters = {
   q?: string;

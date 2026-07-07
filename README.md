@@ -13,7 +13,8 @@ Built as a full-stack **Next.js** app deployed on **Vercel**, with **OpenAI** fo
 | **Frontend**       | Next.js 16 (App Router), React 19, Tailwind CSS 4                                      |
 | **Backend**        | Next.js API routes (`src/app/api/`)                                                    |
 | **Hosting**        | Vercel (serverless)                                                                    |
-| **Job data**       | `src/data/jobs-embedded.json` (~1,500 jobs + precomputed embeddings, loaded in memory) |
+| **Job data**       | PostgreSQL + **pgvector** (Neon-compatible); ~1,500 jobs with precomputed embeddings |
+| **DB driver**      | `@neondatabase/serverless` (Vercel-friendly pooled Postgres)                       |
 | **Embeddings**     | OpenAI `text-embedding-3-small` (1536-dim, shared space for jobs + resumes)            |
 | **LLM**            | OpenAI `gpt-4o-mini` (resume parsing, match insights, skill keywords)                  |
 | **PDF parsing**    | `pdfreader`                                                                            |
@@ -66,7 +67,7 @@ flowchart TB
   subgraph DS["Data Store"]
     direction LR
     GEN["generate_jobs.py"] --> RAW["jobs.json"] --> SCR["embed.ts"]
-    STORE[("jobs-embedded.json\n~1,500 jobs · in memory")]
+    STORE[("PostgreSQL + pgvector\n~1,500 jobs")]
   end
 
   FE1 --> API1
@@ -113,7 +114,7 @@ Source: [`docs/architecture.mmd`](docs/architecture.mmd)
 flowchart TB
   subgraph SETUP["One-time setup"]
     direction LR
-    S1["generate_jobs.py"] --> S2["jobs.json"] --> S3["embed.ts"] --> S4["jobs-embedded.json"]
+    S1["generate_jobs.py"] --> S2["jobs.json"] --> S3["embed.ts"] --> S4["PostgreSQL"]
   end
 
   subgraph BROWSE["Browse all jobs"]
@@ -230,7 +231,7 @@ scoutAI uses a **hybrid matcher**, not pure keyword search or pure LLM ranking.
 | Job/resume matching | `text-embedding-3-small` | Vector similarity over pre-embedded jobs                                |
 | Insights + keywords | `gpt-4o-mini`            | Full job description + profile in prompt; server verifies skill matches |
 
-This is **not RAG** in the retrieval sense for insights — the LLM receives the job and profile directly. Matching uses **precomputed embeddings** scanned in memory (fine for ~1.5K jobs; production would use pgvector or an ANN index).
+This is **not RAG** in the retrieval sense for insights — the LLM receives the job and profile directly. Matching uses **precomputed embeddings** stored in PostgreSQL (pgvector); at ~1.5K jobs the API still applies YOE/seniority filters in app code then cosine-scores the survivor pool.
 
 ---
 
@@ -238,7 +239,7 @@ This is **not RAG** in the retrieval sense for insights — the LLM receives the
 
 - **Next.js on Vercel**: single repo for UI + API, fast deploy, no ops for the demo.
 - **OpenAI embeddings** (vs local MiniLM): Vercel serverless cannot run ONNX/native transformer runtimes reliably; OpenAI keeps jobs and resumes in one vector space with zero extra infra.
-- **Static embedded JSON**: simplest data layer for ~1,500 jobs; avoids DB setup for the assignment demo.
+- **PostgreSQL + pgvector**: job catalog and vectors in one store; removes the large embedded JSON from the deployment bundle; HNSW index ready as the catalog grows.
 - **Top 20 + client-side refine**: keeps match latency predictable and lets users narrow AI results without re-scoring the full catalog.
 
 ---
@@ -250,13 +251,29 @@ cd scoutAI
 npm install
 ```
 
-Add `OPENAI_API_KEY` to `.env.local`.
+Copy `.env.example` to `.env.local` and set:
+
+- `OPENAI_API_KEY`
+- `DATABASE_URL` — PostgreSQL with the **pgvector** extension ([Neon](https://neon.tech) works well on Vercel)
+
+### Database setup
 
 ```bash
-# Regenerate embeddings after changing jobs.json
-npm run embed:jobs
+# Create tables + pgvector indexes
+npm run db:migrate
 
-# Development
+# Option A — import existing local embeddings (fast)
+npm run db:seed
+
+# Option B — re-embed from jobs.json into the DB
+npm run embed:jobs
+```
+
+`embed:jobs` reads `src/data/jobs.json`, calls OpenAI, and upserts into PostgreSQL. Re-run after editing the job corpus or changing embedding models.
+
+### Development
+
+```bash
 npm run dev
 ```
 
@@ -266,7 +283,7 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Future Scope
 
-- **Live job API ingestion**: replace static JSON with a pipeline (cron/workers) and PostgreSQL.
+- **Live job API ingestion**: cron/workers to ingest external postings into the same Postgres schema.
 - **Vector search at scale**: pgvector, Pinecone, or OpenSearch for millions of jobs (ANN instead of full cosine scan).
 - **External apply links**: wire the **View job** CTA to employer ATS URLs.
 - **Persistent insights cache**: Redis or DB for multi-instance serverless.
@@ -277,6 +294,6 @@ Open [http://localhost:3000](http://localhost:3000).
 ## Notes
 
 - Synthetic jobs generated via `generate_jobs.py` in the repo root.
-- Embedding script: `scripts/embed.ts` → writes `src/data/jobs-embedded.json`.
+- Embedding script: `scripts/embed.ts` → upserts into PostgreSQL. One-time import from legacy JSON: `npm run db:seed`.
 - Insights cache is **lazy** — only jobs opened in the detail panel are cached; cleared on new resume upload or “Browse all jobs”.
 - Assignment context: demo architecture targets ~1.5K jobs today; notes in `notes.md` outline pgvector/ANN for production scale.

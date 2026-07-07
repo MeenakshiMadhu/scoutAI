@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { JOBS } from "@/lib/store";
+import { fetchJobById } from "@/lib/jobsDb";
 import { generateMatchInsights } from "@/lib/matchInsights";
 
 export async function POST(req: NextRequest) {
@@ -13,13 +13,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const job = JOBS.find((j) => j.id === jobId);
+    const job = await fetchJobById(jobId);
     if (!job) {
       return NextResponse.json({ error: "Job not found" }, { status: 404 });
     }
 
-    const { embedding: _, ...rest } = job;
-    const result = await generateMatchInsights(profile, rest);
+    const result = await generateMatchInsights(profile, job);
 
     return NextResponse.json(result);
   } catch (e) {

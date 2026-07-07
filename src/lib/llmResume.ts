@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import { FAMILIES, SENIORITY_ORDER } from "@/lib/store";
+import { FAMILIES, SENIORITY_ORDER } from "@/lib/constants";
 import { embedText } from "@/lib/embed";
 import { EMBEDDING_MODEL } from "@/lib/embedConfig";
 import { normalizePdfText } from "@/lib/resumeProfile";
