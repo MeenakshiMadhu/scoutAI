@@ -287,8 +287,8 @@ export default function Home() {
 
       {/* Filters */}
       <section className="relative z-30 w-full glass-panel rounded-2xl p-4 sm:p-5 mb-6 animate-fade-in stagger-1 overflow-visible">
-        <div className="flex flex-col items-center gap-3">
-          <div className="flex flex-wrap gap-3 w-full max-w-3xl justify-center">
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap gap-3 w-full">
             <div className="relative flex-[2] min-w-[220px]">
               <svg
                 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--foreground-muted)] pointer-events-none"
@@ -362,7 +362,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-2 w-full">
+          <div className="flex flex-wrap items-center gap-2 w-full">
             <MultiSelect
               label="Business Area"
               options={FAMILIES}
@@ -419,7 +419,7 @@ export default function Home() {
                 Clear filters
               </button>
             )}
-            <div className="flex items-center justify-center gap-2 shrink-0">
+            <div className="flex items-center gap-2 ml-auto shrink-0">
               <span className="hidden sm:inline text-xs text-[var(--foreground-muted)]">
                 Sort
               </span>
